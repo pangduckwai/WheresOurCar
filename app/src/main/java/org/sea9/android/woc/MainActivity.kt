@@ -1,4 +1,4 @@
-package org.sea9.android.wmc
+package org.sea9.android.woc
 
 import android.os.Bundle
 import android.support.design.widget.Snackbar

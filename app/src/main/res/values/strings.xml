@@ -1,8 +1,5 @@
 <resources>
-    <string name="app_name">Where\'s Our Car</string>
-    <string name="large_text">
-        "Material is the metaphor.\n\n"
-        "A material metaphor is the unifying theory of a rationalized space and a system of motion."
-    </string>
+    <string name="app_name">Where\'s Our Cars</string>
     <string name="action_settings">Settings</string>
+    <string name="hint_vehicle">Vehicle</string>
 </resources>
