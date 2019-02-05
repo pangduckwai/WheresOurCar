@@ -5,6 +5,7 @@ import android.database.SQLException
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
+import org.junit.AfterClass
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -76,17 +77,23 @@ class ExampleInstrumentedTest {
 			parkings = DbContract.Parking.select(helper)
 
 			Log.w("woc.itest", "Adding new Vehicles")
-			vids[0] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Enzo Ferrari",            parkings[5], null, null, false, null))
-			vids[1] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Lamborghini Huracán EVO", parkings[6], null, null, false, null))
-			vids[2] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Porsche 911",             parkings[7], null, null, false, null))
-			vids[3] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Bugatti",                 parkings[8], null, null, false, null))
-			vids[4] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Maserati",                parkings[9], null, null, false, null))
-			vids[5] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Koenigsegg One:1",        parkings[0], null, null, false, null))
-			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX",               parkings[1], null, null, false, null))
-			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius",            parkings[2], null, null, false, null))
-			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X",           parkings[3], null, null, false, null))
-			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4], null, null, true, null))
+			vids[0] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Enzo Ferrari",            parkings[5].name, null, null, false, null))
+			vids[1] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Lamborghini Huracán EVO", parkings[6].name, null, null, false, null))
+			vids[2] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Porsche 911",             parkings[7].name, null, null, false, null))
+			vids[3] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Bugatti",                 parkings[8].name, null, null, false, null))
+			vids[4] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Maserati",                parkings[9].name, null, null, false, null))
+			vids[5] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Koenigsegg One:1",        parkings[0].name, null, null, false, null))
+			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX",               parkings[1].name, null, null, false, null))
+			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius",            parkings[2].name, null, null, false, null))
+			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X",           parkings[3].name, null, null, false, null))
+			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4].name, null, null, true, null))
 		}
+
+//		@AfterClass
+//		@JvmStatic
+//		fun cleanup() {
+//			helper.deleteDatabase()
+//		}
 	}
 
 	@Test
@@ -122,11 +129,11 @@ class ExampleInstrumentedTest {
 		DbContract.Vehicle.insert(helper, VehicleRecord("{'id': -1, 'name': 'bugatti', 'current': 'false'}"))
 	}
 
-	@Test(expected = SQLException::class)
-	fun testDeleteReferencedFKey() {
-		Log.w("woc.itest.testDeleteReferencedFKey", "Attempt to delete record with fkey ref")
-		DbContract.Parking.delete(helper, parkings[1].rid)
-	}
+//	@Test(expected = SQLException::class)
+//	fun testDeleteReferencedFKey() {
+//		Log.w("woc.itest.testDeleteReferencedFKey", "Attempt to delete record with fkey ref")
+//		DbContract.Parking.delete(helper, parkings[1].rid)
+//	}
 
 	@Test
 	fun testDeleteUnreferencedRecord() {

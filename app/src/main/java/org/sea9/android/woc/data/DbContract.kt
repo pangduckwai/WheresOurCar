@@ -53,6 +53,25 @@ object DbContract {
 				}
 				return result
 			}
+			fun selectName(helper: DbHelper): List<String> {
+				val cursor = helper.readableDatabase
+					.query(
+						TABLE,
+						COLUMNS, null, null, null, null,
+						COMMON_NAME
+					)
+
+				val result = mutableListOf<String>()
+				cursor.use {
+					with(it) {
+						while (moveToNext()) {
+							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
+							result.add(name)
+						}
+					}
+				}
+				return result
+			}
 
 			fun insert(helper: DbHelper, name: String): Long {
 				val newRow = ContentValues().apply {
@@ -69,29 +88,24 @@ object DbContract {
 		}
 	}
 
-	//TODO !!!!!!!!!!! parking should be string instead of reference to another table...
 	class Vehicle : BaseColumns {
 		companion object {
 			const val TABLE = "Vehicle"
-			const val COL_PARK = "parking"
-			const val COL_FLOOR = "floor"
-			const val COL_LOT = "lot"
-			const val COL_CURR = "isCurrent"
-			const val PARK_ID = "pid"
-			const val PARK_NAME = "pname"
-			const val PARK_MODF = "pmod"
+			private const val COL_PARK = "parking"
+			private const val COL_FLOOR = "floor"
+			private const val COL_LOT = "lot"
+			private const val COL_CURR = "isCurrent"
 			private const val IDX_VEHICLE = "idxVehicle"
 
 			const val SQL_CREATE =
 				"create table $TABLE (" +
 						"$PKEY integer primary key autoincrement," +
 						"$COMMON_NAME text not null COLLATE NOCASE," +
-						"$COL_PARK integer," +
+						"$COL_PARK text," +
 						"$COL_FLOOR text," +
 						"$COL_LOT text," +
 						"$COL_CURR integer not null," +
-						"$COMMON_MODF integer," +
-						"foreign key($COL_PARK) references ${Parking.TABLE}($PKEY))"
+						"$COMMON_MODF integer)"
 			const val SQL_CREATE_IDX = "create unique index $IDX_VEHICLE on $TABLE ($COMMON_NAME)"
 			const val SQL_DROP = "drop table if exists $TABLE"
 			const val SQL_DROP_IDX = "drop index if exists $IDX_VEHICLE"
@@ -106,12 +120,6 @@ object DbContract {
 				COMMON_MODF
 			)
 
-			private const val SQL_QUERY =
-				"select v.$PKEY, v.$COMMON_NAME, v.$COL_FLOOR, v.$COL_LOT, v.$COL_CURR, v.$COMMON_MODF" +
-				"     , p.$PKEY as pid, p.$COMMON_NAME as pname, p.$COMMON_MODF as pmod" +
-				"  from $TABLE as v" +
-				" left outer join ${Parking.TABLE} as p on p.$PKEY = v.$COL_PARK"
-
 			/**
 			 * Get the current vehicle record by first sort by 'isCurrent', which all row should
 			 * have value of zero except the current row. If more than one row is marked as current
@@ -119,17 +127,17 @@ object DbContract {
 			 */
 			fun select(helper: DbHelper): VehicleRecord? {
 				return select(
-					helper.readableDatabase.rawQuery(
-						"$SQL_QUERY order by v.$COL_CURR desc, v.$COMMON_MODF desc",
-						null
+					helper.readableDatabase.query(
+						TABLE, COLUMNS, null, null, null, null,
+						"$COL_CURR desc, $COMMON_MODF desc"
 					)
 				)
 			}
 			fun select(helper: DbHelper, rid: Long): VehicleRecord? {
 				return select(
-					helper.readableDatabase.rawQuery(
-						"$SQL_QUERY where v.$PKEY = ? order by v.$COMMON_NAME",
-						arrayOf(rid.toString())
+					helper.readableDatabase.query(
+						TABLE, COLUMNS, COMMON_PKEY, arrayOf(rid.toString()), null, null,
+						COMMON_NAME
 					)
 				)
 			}
@@ -140,15 +148,11 @@ object DbContract {
 						while (moveToNext()) {
 							val rid = getLong(getColumnIndexOrThrow(PKEY))
 							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
+							val park = getString(getColumnIndexOrThrow(COL_PARK))
 							val flor = getString(getColumnIndexOrThrow(COL_FLOOR))
 							val plot = getString(getColumnIndexOrThrow(COL_LOT))
 							val curr = getInt(getColumnIndexOrThrow(COL_CURR))
 							val modf = getLong(getColumnIndexOrThrow(COMMON_MODF))
-
-							val pid = getLong(getColumnIndexOrThrow(PARK_ID))
-							val pname = getString(getColumnIndexOrThrow(PARK_NAME))
-							val pmod = getLong(getColumnIndexOrThrow(PARK_MODF))
-							val park = pid?.let { ParkingRecord(pid, pname, pmod) }
 
 							result = VehicleRecord(rid, name, park, flor, plot, (curr != 0), modf)
 							break
@@ -171,10 +175,12 @@ object DbContract {
 						while (moveToNext()) {
 							val rid = getLong(getColumnIndexOrThrow(PKEY))
 							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
+							val park = getString(getColumnIndexOrThrow(COL_PARK))
 							val flor = getString(getColumnIndexOrThrow(COL_FLOOR))
 							val plot = getString(getColumnIndexOrThrow(COL_LOT))
 							val curr = getInt(getColumnIndexOrThrow(COL_CURR))
-							result.add(VehicleRecord(rid, name, null, flor, plot, (curr != 0), null))
+							val modf = getLong(getColumnIndexOrThrow(COMMON_MODF))
+							result.add(VehicleRecord(rid, name, park, flor, plot, (curr != 0), modf))
 						}
 					}
 				}
@@ -184,7 +190,7 @@ object DbContract {
 			fun insert(helper: DbHelper, record: VehicleRecord): Long {
 				val newRow = ContentValues().apply {
 					put(COMMON_NAME, record.name)
-					if (record.parking != null) put(COL_PARK, record.parking!!.rid)
+					if (record.parking != null) put(COL_PARK, record.parking)
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
 					put(COL_CURR, if (record.current) 1 else 0)
@@ -197,7 +203,7 @@ object DbContract {
 				val args = arrayOf(record.rid.toString())
 				val newRow = ContentValues().apply {
 					put(COMMON_NAME, record.name)
-					if (record.parking != null) put(COL_PARK, record.parking!!.rid)
+					if (record.parking != null) put(COL_PARK, record.parking)
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
 					put(COL_CURR, if (record.current) 1 else 0)

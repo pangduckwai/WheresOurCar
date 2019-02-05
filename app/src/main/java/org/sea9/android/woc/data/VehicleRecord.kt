@@ -9,7 +9,7 @@ fun JSONObject.toParkingRecord(): ParkingRecord {
 data class VehicleRecord(
 	  var rid: Long
 	, var name: String
-	, var parking: ParkingRecord?
+	, var parking: String?
 	, var floor: String?
 	, var lot: String?
 	, var current: Boolean
@@ -28,7 +28,7 @@ data class VehicleRecord(
 	constructor(json: JSONObject) : this(
 		json.getLong(RID),
 		json.getString(NAM),
-		json.optJSONObject(PRK)?.toParkingRecord(),
+		json.optString(PRK),
 		json.optString(FLR),
 		json.optString(LOT),
 		json.getBoolean(CUR),
@@ -40,7 +40,7 @@ data class VehicleRecord(
 		val result = JSONObject()
 		result.put(RID, rid)
 		result.put(NAM, name)
-		if (parking != null) result.put(PRK, parking.toString())
+		if (parking != null) result.put(PRK, parking)
 		if (floor != null) result.put(FLR, floor)
 		if (lot != null) result.put(LOT, lot)
 		result.put(CUR, current)
