@@ -85,7 +85,7 @@ class ExampleInstrumentedTest {
 			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX",               parkings[1], null, null, false, null))
 			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius",            parkings[2], null, null, false, null))
 			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X",           parkings[3], null, null, false, null))
-			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4], null, null, false, null))
+			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4], null, null, true, null))
 		}
 	}
 
@@ -96,20 +96,19 @@ class ExampleInstrumentedTest {
 		assertEquals("org.sea9.android.woc", appContext.packageName)
 	}
 
-//	@Test
-//	fun testQuery() {
-//		val p = DbContract.Parking.select(helper)
-//		val v = DbContract.Vehicle.selectAll(helper)
-//
-//		p.forEachIndexed { i, rec ->
-//			Log.w("woc.testQuery", ">>> Parking: $i - $rec")
-//		}
-//		v.forEachIndexed { i, rec ->
-//			Log.w("woc.testQuery", ">>> Vehicle: $i - $rec")
-//		}
-//
-//		assertTrue((p.size == 10) && (v.size == 9))
-//	}
+	@Test
+	fun testSelectCurrent() {
+		val v = DbContract.Vehicle.select(helper)
+		Log.w("woc.itest.testSelectCurrent", v.toString())
+		assertTrue(v!!.current)
+	}
+
+	@Test
+	fun testSelectPrevious() {
+		val v = DbContract.Vehicle.select(helper, vids[7])
+		Log.w("woc.itest.testSelectPrevious", v.toString())
+		assertTrue(!v!!.current)
+	}
 
 	@Test(expected = SQLException::class)
 	fun testUniqueIndexParking() {

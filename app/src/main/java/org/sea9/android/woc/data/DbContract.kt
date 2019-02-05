@@ -69,6 +69,7 @@ object DbContract {
 		}
 	}
 
+	//TODO !!!!!!!!!!! parking should be string instead of reference to another table...
 	class Vehicle : BaseColumns {
 		companion object {
 			const val TABLE = "Vehicle"
@@ -119,7 +120,7 @@ object DbContract {
 			fun select(helper: DbHelper): VehicleRecord? {
 				return select(
 					helper.readableDatabase.rawQuery(
-						"$SQL_QUERY order by v.$COL_CURR desc, $COMMON_MODF desc",
+						"$SQL_QUERY order by v.$COL_CURR desc, v.$COMMON_MODF desc",
 						null
 					)
 				)
@@ -127,7 +128,7 @@ object DbContract {
 			fun select(helper: DbHelper, rid: Long): VehicleRecord? {
 				return select(
 					helper.readableDatabase.rawQuery(
-						"$SQL_QUERY where b.$PKEY = ? order by v.$COMMON_NAME",
+						"$SQL_QUERY where v.$PKEY = ? order by v.$COMMON_NAME",
 						arrayOf(rid.toString())
 					)
 				)
