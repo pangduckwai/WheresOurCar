@@ -141,7 +141,7 @@ class ExampleInstrumentedTest {
 		val ret = DbContract.Parking.delete(helper, parkings[10].rid)
 		var cnt = 0
 		if (ret == 1) {
-			val p = DbContract.Parking.select(helper)
+			val p = DbContract.Parking.selectName(helper)
 			cnt = p.size
 			p.forEachIndexed { i, rec ->
 				Log.w("woc.testDeleteUnreferencedRecord", ">>> Parking: $i - $rec")

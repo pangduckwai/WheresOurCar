@@ -12,7 +12,7 @@
         tools:context="org.sea9.android.woc.MainActivity">
 
     <AutoCompleteTextView
-            android:id="@+id/vehicle"
+            android:id="@+id/parking"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin_narrow"

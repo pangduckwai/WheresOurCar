@@ -1,5 +1,6 @@
 package org.sea9.android.woc
 
+import android.content.Context
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -13,6 +14,7 @@ import org.sea9.android.woc.data.ParkingRecord
 class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.retained_frag"
+		const val EMPTY = ""
 
 		fun getInstance(sfm: FragmentManager): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -35,19 +37,23 @@ class MainContext: Fragment(), DbHelper.Caller {
 		return ((dbHelper != null) && dbHelper!!.ready)
 	}
 
-	lateinit var parkingAdaptor: ArrayAdapter<ParkingRecord>
+	lateinit var parkingAdaptor: ArrayAdapter<String>
 		private set
-//	fun populateParking() {
-//
-//	}
+
+	fun initializeParkingAdaptor(context: Context) {
+		parkingAdaptor = ArrayAdapter(context, android.R.layout.simple_list_item_1)
+	}
+
+	fun populateParking() {
+		val data = DbContract.Parking.selectName(dbHelper!!)
+		parkingAdaptor.clear()
+		parkingAdaptor.addAll(data)
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
-
-//		adaptor = BookmarkAdaptor(this)
-//		tagAdaptor = TagsAdaptor(this)
 	}
 
 	override fun onResume() {
@@ -56,9 +62,17 @@ class MainContext: Fragment(), DbHelper.Caller {
 		if (!isDbReady()) {
 			initDb()
 		} else {
-//			adaptor.populateCache()
-//			tagAdaptor.populateCache()
+			populateParking()
 		}
+	}
+
+	override fun onDestroy() {
+		Log.d(TAG, "onDestroy")
+		if (dbHelper != null) {
+			dbHelper!!.close()
+			dbHelper = null
+		}
+		super.onDestroy()
 	}
 
 	/*===================================================
@@ -67,8 +81,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 	override fun onReady() {
 		Log.d(TAG, "db ready")
 		activity?.runOnUiThread {
-//			adaptor.populateCache()
-//			tagAdaptor.populateCache()
+			populateParking()
 		}
 	}
 
