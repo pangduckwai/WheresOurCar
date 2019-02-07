@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.ParkingRecord
+import org.sea9.android.woc.data.VehicleRecord
 
 class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
@@ -37,10 +38,14 @@ class MainContext: Fragment(), DbHelper.Caller {
 		return ((dbHelper != null) && dbHelper!!.ready)
 	}
 
+	lateinit var vehicleAdaptor: ArrayAdapter<VehicleRecord>
+		private set
+
 	lateinit var parkingAdaptor: ArrayAdapter<String>
 		private set
 
-	fun initializeParkingAdaptor(context: Context) {
+	fun initializeAdaptors(context: Context) {
+		//TODO HERE
 		parkingAdaptor = ArrayAdapter(context, android.R.layout.simple_list_item_1)
 	}
 

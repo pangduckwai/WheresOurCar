@@ -1,12 +1,13 @@
 package org.sea9.android.woc
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.ArrayAdapter
+import android.view.MotionEvent
 import android.widget.AutoCompleteTextView
 import kotlinx.android.synthetic.main.app_main.*
 
@@ -18,21 +19,33 @@ class MainActivity : AppCompatActivity() {
 	private lateinit var retainedContext: MainContext
 	private lateinit var textParking: AutoCompleteTextView
 
+	@SuppressLint("ClickableViewAccessibility")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		setContentView(R.layout.app_main)
 		setSupportActionBar(toolbar)
+		retainedContext = MainContext.getInstance(supportFragmentManager)
 
 		textParking = findViewById(R.id.parking)
-		retainedContext = MainContext.getInstance(supportFragmentManager)
+		textParking.setOnTouchListener { view, event ->
+			when (event?.action) {
+				MotionEvent.ACTION_DOWN -> {
+					if (textParking.isFocusable) textParking.showDropDown() // show the drop down list whenever the car park location textbox is touched
+				}
+				MotionEvent.ACTION_UP -> {
+					view?.performClick()
+				}
+			}
+			false
+		}
 
 		fab.setOnClickListener { view ->
 			Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 				.setAction("Action", null).show()
 		}
 
-		retainedContext.initializeParkingAdaptor(this)
+		retainedContext.initializeAdaptors(this)
 	}
 
 	override fun onResume() {

@@ -86,7 +86,7 @@ class ExampleInstrumentedTest {
 			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX",               parkings[1].name, null, null, false, null))
 			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius",            parkings[2].name, null, null, false, null))
 			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X",           parkings[3].name, null, null, false, null))
-			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4].name, null, null, true, null))
+			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4].name, "5/F", "P50", true, null))
 		}
 
 //		@AfterClass

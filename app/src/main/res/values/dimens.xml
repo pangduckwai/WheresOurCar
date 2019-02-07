@@ -1,7 +1,9 @@
 <resources>
     <dimen name="app_bar_height">180dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="text_margin">16dp</dimen>
+    <dimen name="margin_normal">8dp</dimen>
+    <dimen name="margin_narrow">4dp</dimen>
+    <dimen name="margin_tiny">2dp</dimen>
     <dimen name="tags_width">80dp</dimen>
     <dimen name="row_height">15pt</dimen>
     <dimen name="text_large">14pt</dimen>
@@ -9,7 +11,4 @@
     <dimen name="text_normal">10pt</dimen>
     <dimen name="text_medium">8pt</dimen>
     <dimen name="text_small">6pt</dimen>
-    <dimen name="margin_normal">8dp</dimen>
-    <dimen name="margin_narrow">4dp</dimen>
-    <dimen name="margin_tiny">2dp</dimen>
 </resources>
