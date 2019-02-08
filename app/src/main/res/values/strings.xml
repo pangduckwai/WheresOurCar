@@ -7,4 +7,7 @@
 	<string name="hint_lot">Space</string>
 	<string name="hint_update">Last update</string>
 	<string name="content_add">Add</string>
+	<string name="content_clear">Clear text</string>
+	<string name="button_okay">Okay</string>
+	<string name="button_cancel">Cancel</string>
 </resources>

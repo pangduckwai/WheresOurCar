@@ -36,8 +36,7 @@ object DbContract {
 			fun select(helper: DbHelper): List<ParkingRecord> {
 				val cursor = helper.readableDatabase
 					.query(
-						TABLE,
-						COLUMNS, null, null, null, null,
+						TABLE, COLUMNS, null, null, null, null,
 						COMMON_NAME
 					)
 
@@ -83,7 +82,7 @@ object DbContract {
 				"create table $TABLE (" +
 						"$PKEY integer primary key autoincrement," +
 						"$COMMON_NAME text not null COLLATE NOCASE," +
-						"$COL_PARK text," +
+						"$COL_PARK text not null COLLATE NOCASE," +
 						"$COL_FLOOR text," +
 						"$COL_LOT text," +
 						"$COL_CURR integer not null," +

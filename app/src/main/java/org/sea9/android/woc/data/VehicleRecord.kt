@@ -2,14 +2,10 @@ package org.sea9.android.woc.data
 
 import org.json.JSONObject
 
-fun JSONObject.toParkingRecord(): ParkingRecord {
-	return ParkingRecord(toString())
-}
-
 data class VehicleRecord(
 	  var rid: Long
 	, var name: String
-	, var parking: String?
+	, var parking: String
 	, var floor: String?
 	, var lot: String?
 	, var current: Boolean
@@ -23,24 +19,26 @@ data class VehicleRecord(
 		const val LOT = "lot"
 		const val CUR = "current"
 		const val MOD = "modified"
+		const val EMPTY = ""
 	}
 
 	constructor(json: JSONObject) : this(
 		json.getLong(RID),
 		json.getString(NAM),
-		json.optString(PRK),
+		json.getString(PRK),
 		json.optString(FLR),
 		json.optString(LOT),
 		json.getBoolean(CUR),
 		json.optLong(MOD)
 	)
 	constructor(json: String) : this(JSONObject(json))
+	constructor() : this(-1, EMPTY, EMPTY, null, null, false, null)
 
 	override fun toString(): String {
 		val result = JSONObject()
 		result.put(RID, rid)
 		result.put(NAM, name)
-		if (parking != null) result.put(PRK, parking)
+		result.put(PRK, parking)
 		if (floor != null) result.put(FLR, floor)
 		if (lot != null) result.put(LOT, lot)
 		result.put(CUR, current)
@@ -49,8 +47,8 @@ data class VehicleRecord(
 	}
 
 	override fun equals(other: Any?): Boolean {
-		val value = other as ParkingRecord
-		return (name.toUpperCase() == value.name.toUpperCase())
+		val value = other as VehicleRecord
+		return (name.trim() == value.name.trim())
 	}
 
 	override fun hashCode(): Int {

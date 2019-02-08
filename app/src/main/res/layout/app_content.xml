@@ -24,12 +24,24 @@
 			android:textSize="@dimen/text_title"
 			android:maxLength="50"
 			android:selectAllOnFocus="true"
-			android:completionThreshold="1"
+			android:completionThreshold="0"
 			android:inputType="textCapWords|textNoSuggestions"
 			android:imeOptions="actionNext|flagNoExtractUi"
 			app:layout_constraintEnd_toStartOf="@+id/vehicle_add"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent"/>
+
+	<ImageButton
+			android:id="@+id/vehicle_clear"
+			android:layout_width="@dimen/text_title"
+			android:layout_height="@dimen/text_title"
+			android:layout_marginEnd="@dimen/margin_narrow"
+			android:contentDescription="@string/content_clear"
+			android:background="?android:attr/selectableItemBackground"
+			app:layout_constraintBottom_toBottomOf="@+id/vehicle"
+			app:layout_constraintEnd_toEndOf="@+id/vehicle"
+			app:layout_constraintTop_toTopOf="@+id/vehicle"
+			android:src="@drawable/ic_clear"/>
 
 	<ImageButton
 			android:id="@+id/vehicle_add"
@@ -48,7 +60,7 @@
 
 	<AutoCompleteTextView
 			android:id="@+id/parking"
-			android:layout_width="match_parent"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_marginBottom="@dimen/margin_narrow"
 			android:layout_marginEnd="@dimen/fab_margin"
@@ -58,12 +70,24 @@
 			android:textSize="@dimen/text_large"
 			android:maxLength="50"
 			android:selectAllOnFocus="true"
-			android:completionThreshold="1"
+			android:completionThreshold="0"
 			android:inputType="textCapWords|textNoSuggestions"
 			android:imeOptions="actionNext|flagNoExtractUi"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toBottomOf="@+id/vehicle"/>
+
+	<ImageButton
+			android:id="@+id/parking_clear"
+			android:layout_width="@dimen/text_title"
+			android:layout_height="@dimen/text_title"
+			android:layout_marginEnd="@dimen/margin_narrow"
+			android:contentDescription="@string/content_clear"
+			android:background="?android:attr/selectableItemBackground"
+			app:layout_constraintBottom_toBottomOf="@+id/parking"
+			app:layout_constraintEnd_toEndOf="@+id/parking"
+			app:layout_constraintTop_toTopOf="@+id/parking"
+			android:src="@drawable/ic_clear"/>
 
 	<EditText
 			android:id="@+id/floor"

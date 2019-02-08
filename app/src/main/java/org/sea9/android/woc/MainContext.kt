@@ -10,13 +10,13 @@ import android.widget.ArrayAdapter
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
+import org.sea9.android.woc.ui.MessageDialog
 import java.lang.RuntimeException
 
 class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.retained_frag"
 		const val PATTERN_DATE = "yyyy-MM-dd HH:mm:ss"
-		const val EMPTY = ""
 
 		fun getInstance(sfm: FragmentManager): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -48,16 +48,15 @@ class MainContext: Fragment(), DbHelper.Caller {
 			Log.w(TAG, "Parking updated: $parking")
 			currentVehicle.parking = parking
 			isUpdated = true
-			callback?.onUpdated()
+			populateCurrent(null)
 		}
-
 	}
 	fun updateFloor(floor: String) {
 		if (floor != currentVehicle.floor) {
 			Log.w(TAG, "Floor updated: $floor")
 			currentVehicle.floor = floor
 			isUpdated = true
-			callback?.onUpdated()
+			populateCurrent(null)
 		}
 	}
 	fun updateLot(lot: String) {
@@ -65,20 +64,22 @@ class MainContext: Fragment(), DbHelper.Caller {
 			Log.w(TAG, "Lot updated: $lot")
 			currentVehicle.lot = lot
 			isUpdated = true
-			callback?.onUpdated()
+			populateCurrent(null)
 		}
 	}
 	fun switchVehicle(vehicle: String) {
 		if (vehicle != currentVehicle.name) {
 			val list = DbContract.Vehicle.select(dbHelper!!, vehicle)
-			if (list.size > 1) {
-				throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
-			} else if (list.size == 1) {
-				Log.w(TAG, "Switch vehicle to $vehicle")
-				val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
-				populateCurrent(current)
-			} else {
-				Log.w(TAG, "New vehicle $vehicle ?")
+			when {
+				list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
+				list.size == 1 -> {
+					callback?.doNotify("Switch vehicle to '$vehicle'")
+					val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
+					populateCurrent(current)
+				}
+				else -> {
+					callback?.onNewVehicle(vehicle)
+				}
 			}
 		}
 	}
@@ -95,25 +96,27 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 
 	fun populateVehicleList() {
-		val data = DbContract.Vehicle.selectAll(dbHelper!!)
+		val v = DbContract.Vehicle.selectAll(dbHelper!!)
 		vehicleAdaptor.clear()
-		vehicleAdaptor.addAll(data.map {
+		vehicleAdaptor.addAll(v.map {
 			it.name
 		})
 	}
 
 	fun populateParkingList() {
-		val data = DbContract.Parking.select(dbHelper!!)
+		val p = DbContract.Parking.select(dbHelper!!)
 		parkingAdaptor.clear()
-		parkingAdaptor.addAll(data.map {
+		parkingAdaptor.addAll(p.map {
 			it.name
 		})
 	}
 
 	private fun populateCurrent(current: VehicleRecord?) {
-		if (current != null) currentVehicle = current
-		isUpdated = false
-		callback?.onPopulated(currentVehicle)
+		if (current != null) {
+			currentVehicle = current
+			isUpdated = false
+		}
+		callback?.onPopulated(currentVehicle, !isUpdated)
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,7 +133,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		} else {
 			populateVehicleList()
 			populateParkingList()
-			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord(-1, EMPTY, null, null, null, true, null))
+			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
 		}
 	}
 
@@ -147,8 +150,11 @@ class MainContext: Fragment(), DbHelper.Caller {
 	 * Callback interface to the MainActivity
 	 */
 	interface Callback {
-		fun onPopulated(data: VehicleRecord?)
-		fun onUpdated()
+		fun onPopulated(data: VehicleRecord?, clearFocus: Boolean)
+		fun onNewVehicle(vehicle: String)
+		fun doNotify(msg: String)
+		fun doNotify(msg: String, stay: Boolean)
+		fun doNotify(ref: Int, msg: String, stay: Boolean)
 	}
 	private var callback: Callback? = null
 
@@ -175,7 +181,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		activity?.runOnUiThread {
 			populateVehicleList()
 			populateParkingList()
-			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord(-1, EMPTY, null, null, null, true, null))
+			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
 		}
 	}
 

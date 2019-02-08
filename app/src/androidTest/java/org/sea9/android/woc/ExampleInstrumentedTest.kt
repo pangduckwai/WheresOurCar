@@ -77,16 +77,16 @@ class ExampleInstrumentedTest {
 			parkings = DbContract.Parking.select(helper)
 
 			Log.w("woc.itest", "Adding new Vehicles")
-			vids[0] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Enzo Ferrari",            parkings[5].name, null, null, false, null))
-			vids[1] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Lamborghini Huracán EVO", parkings[6].name, null, null, false, null))
-			vids[2] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Porsche 911",             parkings[7].name, null, null, false, null))
-			vids[3] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Bugatti",                 parkings[8].name, null, null, false, null))
-			vids[4] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Maserati",                parkings[9].name, null, null, false, null))
-			vids[5] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Koenigsegg One:1",        parkings[0].name, null, null, false, null))
-			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX",               parkings[1].name, null, null, false, null))
-			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius",            parkings[2].name, null, null, false, null))
-			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X",           parkings[3].name, null, null, false, null))
-			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf",               parkings[4].name, "5/F", "P50", true, null))
+			vids[0] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Enzo Ferrari", "On Dak Chung Sum", null, null, false, null))
+			vids[1] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Lamborghini Huracán EVO", "Some Parking 01", null, null, false, null))
+			vids[2] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Porsche 911", "Some Parking 02", null, null, false, null))
+			vids[3] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Bugatti", "Some Parking 03", null, null, false, null))
+			vids[4] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Maserati", "Some Parking 04", null, null, false, null))
+			vids[5] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Koenigsegg One:1", "Some Parking 05", null, null, false, null))
+			vids[6] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Honda NSX", "Dai Kwok Chung Sum", null, null, false, null))
+			vids[7] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Toyota Prius", "Dung Kong Sing", null, null, false, null))
+			vids[8] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "Tesla Model X", "MG Tower G/Floor", null, null, false, null))
+			vids[9] = DbContract.Vehicle.insert(helper, VehicleRecord(-1, "VW e-Golf", "Monthly Parking", "5/F", "P50", true, null))
 		}
 
 //		@AfterClass
@@ -126,7 +126,7 @@ class ExampleInstrumentedTest {
 	@Test(expected = SQLException::class)
 	fun testUniqueIndex2() {
 		Log.w("woc.itest.testUniqueIndex2", "Attempt to add vehicle with duplicated name")
-		DbContract.Vehicle.insert(helper, VehicleRecord("{'id': -1, 'name': 'bugatti', 'current': 'false'}"))
+		DbContract.Vehicle.insert(helper, VehicleRecord("{'id': -1, 'name': 'bugatti', 'parking': 'Dung Kong Sing', 'current': 'false'}"))
 	}
 
 	@Test
@@ -166,6 +166,7 @@ class ExampleInstrumentedTest {
 			VehicleRecord("{" +
 					"'id': ${vids[2]}," +
 					"'name': 'Porsche 911 GT'," +
+					"'parking': 'Some Parking 02'," +
 					"'floor': 'B1'," +
 					"'lot': 'P10'," +
 					"'current': 'false'}")

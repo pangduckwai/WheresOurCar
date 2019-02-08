@@ -30,7 +30,7 @@ data class ParkingRecord(
 
 	override fun equals(other: Any?): Boolean {
 		val value = other as ParkingRecord
-		return (name.toUpperCase() == value.name.toUpperCase())
+		return (name.trim() == value.name.trim())
 	}
 
 	override fun hashCode(): Int {

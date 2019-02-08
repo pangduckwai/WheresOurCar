@@ -2,6 +2,7 @@ package org.sea9.android.woc
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.DialogInterface
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
@@ -9,6 +10,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
@@ -17,12 +19,16 @@ import android.widget.EditText
 import android.widget.TextView
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
+import org.sea9.android.woc.ui.MessageDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity(), MainContext.Callback {
+class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.main"
+
+		const val MSG_DIALOG_NOTIFY  = 90001
+		const val MSG_DIALOG_NEW_VEHICLE = 90002
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -46,70 +52,71 @@ class MainActivity : AppCompatActivity(), MainContext.Callback {
 			// Show the drop down list whenever the view is touched
 			when (event?.action) {
 				MotionEvent.ACTION_DOWN -> {
-					if (textVehicle.isFocusable) textVehicle.showDropDown()
+					if (textVehicle.isFocusable) {
+						textVehicle.showDropDown()
+					}
 				}
-				MotionEvent.ACTION_UP -> {
-					view?.performClick()
-				}
+				MotionEvent.ACTION_UP -> view?.performClick()
 			}
 			false
 		}
 		textVehicle.setOnFocusChangeListener { view, hasFocus ->
 			// Show the drop down list whenever the view gain focus
 			if (hasFocus) {
-				(this.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
-				view.post {
+				(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+				view.postDelayed({
 					textVehicle.showDropDown()
-				}
+				}, 100)
 			} else {
+				Log.w(TAG, "Vehicle lose focus ${textVehicle.text}")
+				retainedContext.switchVehicle(textVehicle.text.toString())
 				view.clearFocus()
 			}
 		}
 		textVehicle.setOnEditorActionListener { _, actionId, _ ->
 			when (actionId) {
-				EditorInfo.IME_ACTION_NEXT -> {
-					retainedContext.switchVehicle(textVehicle.text.toString())
-					false
-				}
-				else -> {
-					false
-				}
+				EditorInfo.IME_ACTION_NEXT -> retainedContext.switchVehicle(textVehicle.text.toString())
 			}
+			false
 		}
-		textVehicle.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+		textVehicle.onItemClickListener = AdapterView.OnItemClickListener { _, _, _, _ ->
 			retainedContext.switchVehicle(textVehicle.text.toString())
 		}
 
 		textParking = findViewById(R.id.parking)
 		textParking.setOnTouchListener { view, event ->
+			// show the drop down list whenever the car park location textbox is touched
 			when (event?.action) {
 				MotionEvent.ACTION_DOWN -> {
-					if (textParking.isFocusable) textParking.showDropDown() // show the drop down list whenever the car park location textbox is touched
+					if (textParking.isFocusable) {
+						textParking.showDropDown()
+					}
 				}
-				MotionEvent.ACTION_UP -> {
-					view?.performClick()
-				}
+				MotionEvent.ACTION_UP -> view?.performClick()
 			}
 			false
 		}
 		textParking.setOnFocusChangeListener { view, hasFocus ->
 			// Show the drop down list whenever the view gain focus
 			if (hasFocus) {
-				textParking.showDropDown()
+				(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+				view.postDelayed({
+					textParking.showDropDown()
+				}, 100)
 			} else {
+				Log.w(TAG, "Parking lose focus ${textParking.text}")
+				retainedContext.updateParking(textParking.text.toString())
 				view.clearFocus()
 			}
 		}
 		textParking.setOnEditorActionListener { _, actionId, _ ->
 			when (actionId) {
-				EditorInfo.IME_ACTION_NEXT -> {
-					retainedContext.updateParking(textParking.text.toString())
-					false
-				}
-				else -> {
-					false
-				}
+				EditorInfo.IME_ACTION_NEXT -> retainedContext.updateParking(textParking.text.toString())
 			}
+			false
+		}
+		textParking.onItemClickListener = AdapterView.OnItemClickListener { _, _, _, _ ->
+			retainedContext.updateParking(textParking.text.toString())
 		}
 
 		textFloor = findViewById(R.id.floor)
@@ -117,25 +124,34 @@ class MainActivity : AppCompatActivity(), MainContext.Callback {
 			when (actionId) {
 				EditorInfo.IME_ACTION_NEXT -> {
 					retainedContext.updateFloor(textFloor.text.toString())
-					false
 				}
-				else -> {
-					false
-				}
+			}
+			false
+		}
+		textFloor.setOnFocusChangeListener { view, hasFocus ->
+			if (!hasFocus) {
+				Log.w(TAG, "Floor lose focus ${textFloor.text}")
+				retainedContext.updateFloor(textFloor.text.toString())
+				view.clearFocus()
 			}
 		}
 
 		textLot = findViewById(R.id.lot)
-		textLot.setOnEditorActionListener { _, actionId, _ ->
+		textLot.setOnEditorActionListener { view, actionId, _ ->
 			when (actionId) {
 				EditorInfo.IME_ACTION_DONE -> {
 					retainedContext.updateLot(textLot.text.toString())
-//					view?.clearFocus()
-//					(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
-					false
+					view?.clearFocus()
+					(getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
 				}
-				else ->
-					false
+			}
+			false
+		}
+		textLot.setOnFocusChangeListener { view, hasFocus ->
+			if (!hasFocus) {
+				Log.w(TAG, "Lot lose focus ${textLot.text}")
+				retainedContext.updateLot(textLot.text.toString())
+				view.clearFocus()
 			}
 		}
 
@@ -177,15 +193,35 @@ class MainActivity : AppCompatActivity(), MainContext.Callback {
 	/*======================================================
 	 * Common implementation of several Callback interfaces
 	 */
-	fun doNotify(msg: String) {
-		Snackbar.make(fab, msg, Snackbar.LENGTH_LONG).show()
+	override fun doNotify(msg: String) {
+		doNotify(msg, false)
+	}
+	override fun doNotify(msg: String, stay: Boolean) {
+		doNotify(MSG_DIALOG_NOTIFY, msg, stay)
+	}
+	override fun doNotify(ref: Int, msg: String, stay: Boolean) {
+		if (stay || (msg.length > 70)) {
+			MessageDialog.getInstance(ref, msg, null).show(supportFragmentManager, MessageDialog.TAG)
+		} else {
+			Snackbar.make(fab, msg, Snackbar.LENGTH_LONG).show()
+		}
 	}
 	//======================================================
 
-	/*===================================================
+	/*================================================
 	 * @see org.sea9.android.woc.MainContext.Callback
 	 */
-	override fun onPopulated(data: VehicleRecord?) {
+	override fun onPopulated(data: VehicleRecord?, clearFocus: Boolean) {
+		if (clearFocus) {
+			var view = currentFocus
+			if (view == null) view = View(this)
+			view.postDelayed({
+				Log.w(TAG, "Clearing focus!!!")
+				(getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
+				view.clearFocus()
+			}, 100)
+		}
+
 		val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
 		textVehicle.setText(data?.name)
 		textParking.setText(data?.parking)
@@ -199,8 +235,42 @@ class MainActivity : AppCompatActivity(), MainContext.Callback {
 		)
 	}
 
-	override fun onUpdated() {
-		val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
-		textUpdate.text = (formatter.format(Date()))
+	override fun onNewVehicle(vehicle: String) {
+		if (!dialogShowing) {
+			val bundle = Bundle()
+			bundle.putString(MainContext.TAG, vehicle)
+			MessageDialog.getOkayCancelDialog(MSG_DIALOG_NEW_VEHICLE, "Add new vehicle '$vehicle'?", bundle)
+				.show(supportFragmentManager, MessageDialog.TAG)
+			dialogShowing = true
+		}
+	}
+	//================================================
+
+	/*=====================================================
+	 * @see org.sea9.android.woc.ui.MessageDialog.Callback
+	 */
+	private var dialogShowing = false
+	override fun neutral(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when (reference) {
+			MSG_DIALOG_NOTIFY -> {
+				dialogShowing = false
+				dialog?.dismiss()
+			}
+		}
+	}
+
+	override fun positive(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when (reference) {
+			MSG_DIALOG_NEW_VEHICLE -> {
+				Log.w(TAG, "Adding new vehcile '${bundle?.getString(MainContext.TAG)}'")
+			}
+		}
+		dialogShowing = false
+		dialog?.dismiss()
+	}
+
+	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		dialogShowing = false
+		dialog?.dismiss()
 	}
 }
