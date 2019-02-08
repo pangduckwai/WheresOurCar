@@ -129,19 +129,13 @@ class ExampleInstrumentedTest {
 		DbContract.Vehicle.insert(helper, VehicleRecord("{'id': -1, 'name': 'bugatti', 'current': 'false'}"))
 	}
 
-//	@Test(expected = SQLException::class)
-//	fun testDeleteReferencedFKey() {
-//		Log.w("woc.itest.testDeleteReferencedFKey", "Attempt to delete record with fkey ref")
-//		DbContract.Parking.delete(helper, parkings[1].rid)
-//	}
-
 	@Test
 	fun testDeleteUnreferencedRecord() {
 		Log.w("woc.itest.testDeleteUnreferencedRecord", "Delete unused parking record")
 		val ret = DbContract.Parking.delete(helper, parkings[10].rid)
 		var cnt = 0
 		if (ret == 1) {
-			val p = DbContract.Parking.selectName(helper)
+			val p = DbContract.Parking.select(helper)
 			cnt = p.size
 			p.forEachIndexed { i, rec ->
 				Log.w("woc.testDeleteUnreferencedRecord", ">>> Parking: $i - $rec")
@@ -177,5 +171,22 @@ class ExampleInstrumentedTest {
 					"'current': 'false'}")
 		)
 		assertTrue(ret == 1)
+	}
+
+	@Test
+	fun testQuery() {
+		Log.w("woc.itest.testQuery", "Query vehicle record")
+		val result1 = DbContract.Vehicle.select(helper, 1234567890)
+		assertTrue(result1 == null)
+		val result2 = DbContract.Vehicle.select(helper, "HAHAHAHAHA")
+		assertTrue(result2.isEmpty())
+
+		val list = DbContract.Vehicle.select(helper, vids[5])
+		val list1 = DbContract.Vehicle.select(helper, "Koenigsegg One:1")
+		assertTrue(list?.rid == list1[0].rid)
+		val list2 = DbContract.Vehicle.select(helper, "KOENIGSEGG ONE:1")
+		assertTrue(list?.rid == list2[0].rid)
+		val list3 = DbContract.Vehicle.select(helper, "koenigsegg one:1")
+		assertTrue(list?.rid == list3[0].rid)
 	}
 }

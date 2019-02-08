@@ -3,6 +3,7 @@ package org.sea9.android.woc.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
+import java.lang.RuntimeException
 import java.util.*
 
 object DbContract {
@@ -48,25 +49,6 @@ object DbContract {
 							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
 							val modified = getLong(getColumnIndexOrThrow(COMMON_MODF))
 							result.add(ParkingRecord(rid, name, modified))
-						}
-					}
-				}
-				return result
-			}
-			fun selectName(helper: DbHelper): List<String> {
-				val cursor = helper.readableDatabase
-					.query(
-						TABLE,
-						COLUMNS, null, null, null, null,
-						COMMON_NAME
-					)
-
-				val result = mutableListOf<String>()
-				cursor.use {
-					with(it) {
-						while (moveToNext()) {
-							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
-							result.add(name)
 						}
 					}
 				}
@@ -130,45 +112,41 @@ object DbContract {
 					helper.readableDatabase.query(
 						TABLE, COLUMNS, null, null, null, null,
 						"$COL_CURR desc, $COMMON_MODF desc"
-					)
-				)
+					), true
+				)?.get(0)
 			}
+
+			/**
+			 * Get vehicle record by ID.
+			 */
 			fun select(helper: DbHelper, rid: Long): VehicleRecord? {
 				return select(
 					helper.readableDatabase.query(
 						TABLE, COLUMNS, COMMON_PKEY, arrayOf(rid.toString()), null, null,
 						COMMON_NAME
-					)
-				)
+					), true
+				)?.get(0)
 			}
-			private fun select(cursor: Cursor): VehicleRecord? {
-				var result: VehicleRecord? = null
-				cursor.use {
-					with(it) {
-						while (moveToNext()) {
-							val rid = getLong(getColumnIndexOrThrow(PKEY))
-							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
-							val park = getString(getColumnIndexOrThrow(COL_PARK))
-							val flor = getString(getColumnIndexOrThrow(COL_FLOOR))
-							val plot = getString(getColumnIndexOrThrow(COL_LOT))
-							val curr = getInt(getColumnIndexOrThrow(COL_CURR))
-							val modf = getLong(getColumnIndexOrThrow(COMMON_MODF))
 
-							result = VehicleRecord(rid, name, park, flor, plot, (curr != 0), modf)
-							break
-						}
-					}
-				}
-				return result
+			fun select(helper: DbHelper, name: String): List<VehicleRecord> {
+				return select(
+					helper.readableDatabase.query(
+						TABLE, COLUMNS, "$COMMON_NAME = ?", arrayOf(name), null, null,
+						COMMON_NAME
+					), false
+				) ?: mutableListOf()
 			}
 
 			fun selectAll(helper: DbHelper): List<VehicleRecord> {
-				val cursor = helper.readableDatabase
-					.query(
+				return select(
+					helper.readableDatabase.query(
 						TABLE, COLUMNS, null, null, null, null,
 						COMMON_NAME
-					)
+					), false
+				) ?: mutableListOf()
+			}
 
+			private fun select(cursor: Cursor, firstRowOnly: Boolean): List<VehicleRecord>? {
 				val result = mutableListOf<VehicleRecord>()
 				cursor.use {
 					with(it) {
@@ -181,10 +159,14 @@ object DbContract {
 							val curr = getInt(getColumnIndexOrThrow(COL_CURR))
 							val modf = getLong(getColumnIndexOrThrow(COMMON_MODF))
 							result.add(VehicleRecord(rid, name, park, flor, plot, (curr != 0), modf))
+							if (firstRowOnly) break
 						}
 					}
 				}
-				return result
+				return if (result.size <= 0)
+					null
+				else
+					result
 			}
 
 			fun insert(helper: DbHelper, record: VehicleRecord): Long {
@@ -215,6 +197,28 @@ object DbContract {
 			fun delete(helper: DbHelper, rid: Long): Int {
 				val args = arrayOf(rid.toString())
 				return helper.writableDatabase.delete(TABLE, COMMON_PKEY, args)
+			}
+
+			fun switch(helper: DbHelper, rid: Long): VehicleRecord? {
+				val db = helper.writableDatabase
+				val args = arrayOf(rid.toString())
+				var ret = -1
+				db.beginTransactionNonExclusive()
+				try {
+					val newRow0 = ContentValues().apply { put(COL_CURR, 0) }
+					if (db.update(TABLE, newRow0, null, null) > 0) {
+						val newRow1 = ContentValues().apply { put(COL_CURR, 1) }
+						ret = db.update(TABLE, newRow1, COMMON_PKEY, args)
+						if (ret == 1) db.setTransactionSuccessful()
+					}
+				} finally {
+					db.endTransaction()
+				}
+
+				return if (ret == 1)
+					select(helper)
+				else
+					null
 			}
 		}
 	}
