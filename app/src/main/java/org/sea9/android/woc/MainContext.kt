@@ -42,6 +42,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	var isUpdated = false
 		private set
 
+	var isNew = false
+		private set
+
 	private lateinit var currentVehicle: VehicleRecord
 	fun updateParking(parking: String) {
 		if (parking != currentVehicle.parking) {
@@ -68,7 +71,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		}
 	}
 	fun switchVehicle(vehicle: String) {
-		if (vehicle != currentVehicle.name) {
+		if (vehicle.isNotBlank() && (vehicle != currentVehicle.name)) {
 			val list = DbContract.Vehicle.select(dbHelper!!, vehicle)
 			when {
 				list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
@@ -76,11 +79,39 @@ class MainContext: Fragment(), DbHelper.Caller {
 					callback?.doNotify("Switch vehicle to '$vehicle'")
 					val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
 					populateCurrent(current)
+					isNew = false
 				}
 				else -> {
 					callback?.onNewVehicle(vehicle)
 				}
 			}
+		}
+	}
+	fun newVehicle(vehicle: String) {
+		if (vehicle.isNotBlank()) {
+			val current = VehicleRecord()
+			current.name = vehicle
+			populateCurrent(current)
+			isNew = true
+		}
+	}
+	fun saveVehicle(): Boolean {
+		if (currentVehicle.name.isBlank()) {
+			callback?.doNotify("Vehicle name cannot be empty")
+			return false
+		} else if (!isUpdated) {
+			callback?.doNotify("No change made")
+			return false
+		} else if (isNew) {
+			val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
+			populateCurrent(current)
+			return (current != null)
+		} else {
+			return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
+				populateCurrent(currentVehicle)
+				true
+			} else
+				false
 		}
 	}
 
@@ -115,6 +146,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		if (current != null) {
 			currentVehicle = current
 			isUpdated = false
+			isNew = false
 		}
 		callback?.onPopulated(currentVehicle, !isUpdated)
 	}

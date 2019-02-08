@@ -13,10 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.AdapterView
-import android.widget.AutoCompleteTextView
-import android.widget.EditText
-import android.widget.TextView
+import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.woc.ui.MessageDialog
@@ -26,7 +23,7 @@ import java.util.*
 class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.main"
-
+		const val EMPTY = ""
 		const val MSG_DIALOG_NOTIFY  = 90001
 		const val MSG_DIALOG_NEW_VEHICLE = 90002
 	}
@@ -37,6 +34,8 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 	private lateinit var textFloor: EditText
 	private lateinit var textLot: EditText
 	private lateinit var textUpdate: TextView
+	private lateinit var buttonVehicle: ImageButton
+	private lateinit var buttonParking: ImageButton
 
 	@SuppressLint("ClickableViewAccessibility")
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +82,12 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 			retainedContext.switchVehicle(textVehicle.text.toString())
 		}
 
+		buttonVehicle = findViewById(R.id.vehicle_clear)
+		buttonVehicle.setOnClickListener {
+			textVehicle.setText(EMPTY)
+			textVehicle.requestFocus()
+		}
+
 		textParking = findViewById(R.id.parking)
 		textParking.setOnTouchListener { view, event ->
 			// show the drop down list whenever the car park location textbox is touched
@@ -117,6 +122,12 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 		textParking.onItemClickListener = AdapterView.OnItemClickListener { _, _, _, _ ->
 			retainedContext.updateParking(textParking.text.toString())
+		}
+
+		buttonParking = findViewById(R.id.parking_clear)
+		buttonParking.setOnClickListener {
+			textParking.setText(EMPTY)
+			textParking.requestFocus()
 		}
 
 		textFloor = findViewById(R.id.floor)
@@ -158,12 +169,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		textUpdate = findViewById(R.id.update)
 
 		fab.setOnClickListener { view ->
-			val veh = textVehicle.text
-			val prk = textParking.text
-			val flr = textFloor.text
-			val lot = textLot.text
-			Snackbar.make(view, "Vehicle $veh in $prk on no. $lot of the $flr floor (${(retainedContext.isUpdated)})"
-				, Snackbar.LENGTH_LONG).setAction("Action", null).show()
+			if (retainedContext.saveVehicle()) finish() //TODO HERE Update widget
 		}
 	}
 
@@ -262,7 +268,9 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 	override fun positive(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
 		when (reference) {
 			MSG_DIALOG_NEW_VEHICLE -> {
-				Log.w(TAG, "Adding new vehcile '${bundle?.getString(MainContext.TAG)}'")
+				val vehicle = bundle?.getString(MainContext.TAG) ?: EMPTY
+				doNotify("Adding new vehicle '$vehicle'")
+				retainedContext.newVehicle(vehicle)
 			}
 		}
 		dialogShowing = false

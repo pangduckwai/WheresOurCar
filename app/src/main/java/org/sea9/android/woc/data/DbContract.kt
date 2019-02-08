@@ -3,7 +3,6 @@ package org.sea9.android.woc.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.provider.BaseColumns
-import java.lang.RuntimeException
 import java.util.*
 
 object DbContract {
@@ -171,7 +170,7 @@ object DbContract {
 			fun insert(helper: DbHelper, record: VehicleRecord): Long {
 				val newRow = ContentValues().apply {
 					put(COMMON_NAME, record.name)
-					if (record.parking != null) put(COL_PARK, record.parking)
+					put(COL_PARK, record.parking)
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
 					put(COL_CURR, if (record.current) 1 else 0)
@@ -184,10 +183,10 @@ object DbContract {
 				val args = arrayOf(record.rid.toString())
 				val newRow = ContentValues().apply {
 					put(COMMON_NAME, record.name)
-					if (record.parking != null) put(COL_PARK, record.parking)
+					put(COL_PARK, record.parking)
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
-					put(COL_CURR, if (record.current) 1 else 0)
+					put(COL_CURR, 1)
 					put(COMMON_MODF, Date().time)
 				}
 				return helper.writableDatabase.update(TABLE, newRow, COMMON_PKEY, args)
@@ -201,12 +200,12 @@ object DbContract {
 			fun switch(helper: DbHelper, rid: Long): VehicleRecord? {
 				val db = helper.writableDatabase
 				val args = arrayOf(rid.toString())
+				val newRow0 = ContentValues().apply { put(COL_CURR, 0) }
+				val newRow1 = ContentValues().apply { put(COL_CURR, 1) }
 				var ret = -1
 				db.beginTransactionNonExclusive()
 				try {
-					val newRow0 = ContentValues().apply { put(COL_CURR, 0) }
 					if (db.update(TABLE, newRow0, null, null) > 0) {
-						val newRow1 = ContentValues().apply { put(COL_CURR, 1) }
 						ret = db.update(TABLE, newRow1, COMMON_PKEY, args)
 						if (ret == 1) db.setTransactionSuccessful()
 					}
@@ -218,6 +217,35 @@ object DbContract {
 					select(helper)
 				else
 					null
+			}
+
+			fun add(helper: DbHelper, record: VehicleRecord): VehicleRecord? {
+				val now = Date().time
+				val db = helper.writableDatabase
+				val newRow0 = ContentValues().apply { put(COL_CURR, 0) }
+				val newRow1 = ContentValues().apply {
+					put(COMMON_NAME, record.name)
+					put(COL_PARK, record.parking)
+					put(COL_FLOOR, record.floor)
+					put(COL_LOT, record.lot)
+					put(COL_CURR, 1)
+					put(COMMON_MODF, now)
+				}
+
+				var result: VehicleRecord? = null
+				db.beginTransactionNonExclusive()
+				try {
+					if (db.update(TABLE, newRow0, null, null) > 0) {
+						val ret = db.insertOrThrow(TABLE, null, newRow1)
+						if (ret >= 0) {
+							db.setTransactionSuccessful()
+							result = VehicleRecord(ret, record.name, record.parking, record.floor, record.lot, true, now)
+						}
+					}
+				} finally {
+					db.endTransaction()
+				}
+				return result
 			}
 		}
 	}
