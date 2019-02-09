@@ -76,7 +76,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 			when {
 				list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
 				list.size == 1 -> {
-					callback?.doNotify("Switch vehicle to '$vehicle'")
+					callback?.doNotify("Switch to '$vehicle'")
 					val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
 					populateCurrent(current)
 					isNew = false

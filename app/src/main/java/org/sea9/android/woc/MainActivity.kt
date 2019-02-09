@@ -4,13 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -169,7 +165,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		textUpdate = findViewById(R.id.update)
 
 		fab.setOnClickListener { view ->
-			if (retainedContext.saveVehicle()) finish() //TODO HERE Update widget
+			saveChanges()
 		}
 	}
 
@@ -196,6 +192,16 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 	}
 
+	private fun saveChanges() {
+		retainedContext.updateFloor(textFloor.text.toString())
+		retainedContext.updateLot(textLot.text.toString())
+		retainedContext.updateParking(textParking.text.toString())
+		if (retainedContext.saveVehicle()) { //TODO HERE Update widget
+			doNotify("Vehicle location updated")
+			finish()
+		}
+	}
+
 	/*======================================================
 	 * Common implementation of several Callback interfaces
 	 */
@@ -209,7 +215,9 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		if (stay || (msg.length > 70)) {
 			MessageDialog.getInstance(ref, msg, null).show(supportFragmentManager, MessageDialog.TAG)
 		} else {
-			Snackbar.make(fab, msg, Snackbar.LENGTH_LONG).show()
+			val obj = Toast.makeText(this, msg, Toast.LENGTH_LONG )
+			obj.setGravity(Gravity.BOTTOM, 0, 0)
+			obj.show()
 		}
 	}
 	//======================================================

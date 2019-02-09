@@ -5,6 +5,7 @@
 		xmlns:app="http://schemas.android.com/apk/res-auto"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
+		android:layout_marginTop="@dimen/fab_margin"
 		android:paddingTop="@dimen/fab_margin"
 		android:descendantFocusability="beforeDescendants"
 		android:focusableInTouchMode="true"
@@ -17,7 +18,7 @@
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_marginBottom="@dimen/margin_narrow"
-			android:layout_marginEnd="@dimen/margin_normal"
+			android:layout_marginEnd="@dimen/fab_margin"
 			android:layout_marginStart="@dimen/fab_margin"
 			android:layout_marginTop="@dimen/fab_margin"
 			android:hint="@string/hint_vehicle"
@@ -27,7 +28,7 @@
 			android:completionThreshold="0"
 			android:inputType="textCapWords|textNoSuggestions"
 			android:imeOptions="actionNext|flagNoExtractUi"
-			app:layout_constraintEnd_toStartOf="@+id/vehicle_add"
+			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent"/>
 
@@ -41,22 +42,7 @@
 			app:layout_constraintBottom_toBottomOf="@+id/vehicle"
 			app:layout_constraintEnd_toEndOf="@+id/vehicle"
 			app:layout_constraintTop_toTopOf="@+id/vehicle"
-			android:src="@drawable/ic_clear"/>
-
-	<ImageButton
-			android:id="@+id/vehicle_add"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginBottom="@dimen/margin_normal"
-			android:layout_marginEnd="@dimen/fab_margin"
-			android:contentDescription="@string/content_add"
-			android:minWidth="0dp"
-			android:minHeight="0dp"
-			android:padding="0dp"
-			android:background="?android:attr/selectableItemBackground"
-			app:layout_constraintBottom_toBottomOf="@+id/vehicle"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:srcCompat="@android:drawable/ic_input_add" />
+			android:src="@drawable/icon_clear"/>
 
 	<AutoCompleteTextView
 			android:id="@+id/parking"
@@ -87,7 +73,7 @@
 			app:layout_constraintBottom_toBottomOf="@+id/parking"
 			app:layout_constraintEnd_toEndOf="@+id/parking"
 			app:layout_constraintTop_toTopOf="@+id/parking"
-			android:src="@drawable/ic_clear"/>
+			android:src="@drawable/icon_clear"/>
 
 	<EditText
 			android:id="@+id/floor"
