@@ -1,6 +1,7 @@
 package org.sea9.android.woc
 
 import android.content.Context
+import android.database.SQLException
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -10,7 +11,6 @@ import android.widget.ArrayAdapter
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
-import org.sea9.android.woc.ui.MessageDialog
 import java.lang.RuntimeException
 
 class MainContext: Fragment(), DbHelper.Caller {
@@ -32,23 +32,21 @@ class MainContext: Fragment(), DbHelper.Caller {
 	private fun setDbHelper(helper: DbHelper) {
 		dbHelper = helper
 	}
-	fun getDbHelper(): DbHelper? {
-		return dbHelper
-	}
-	fun isDbReady(): Boolean {
+//	fun getDbHelper(): DbHelper? {
+////		return dbHelper
+////	}
+	private fun isDbReady(): Boolean {
 		return ((dbHelper != null) && dbHelper!!.ready)
 	}
 
 	var isUpdated = false
 		private set
 
-	var isNew = false
-		private set
+	private var isNew = false
 
 	private lateinit var currentVehicle: VehicleRecord
 	fun updateParking(parking: String) {
 		if (parking != currentVehicle.parking) {
-			Log.w(TAG, "Parking updated: $parking")
 			currentVehicle.parking = parking
 			isUpdated = true
 			populateCurrent(null)
@@ -56,7 +54,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 	fun updateFloor(floor: String) {
 		if (floor != currentVehicle.floor) {
-			Log.w(TAG, "Floor updated: $floor")
 			currentVehicle.floor = floor
 			isUpdated = true
 			populateCurrent(null)
@@ -64,7 +61,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 	fun updateLot(lot: String) {
 		if (lot != currentVehicle.lot) {
-			Log.w(TAG, "Lot updated: $lot")
 			currentVehicle.lot = lot
 			isUpdated = true
 			populateCurrent(null)
@@ -102,16 +98,33 @@ class MainContext: Fragment(), DbHelper.Caller {
 		} else if (!isUpdated) {
 			callback?.doNotify("No change made")
 			return false
-		} else if (isNew) {
-			val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
-			populateCurrent(current)
-			return (current != null)
 		} else {
-			return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
-				populateCurrent(currentVehicle)
-				true
-			} else
-				false
+			try {
+				DbContract.Parking.insert(dbHelper!!, currentVehicle.parking)
+				populateParkingList()
+				callback?.doNotify("New parking ${currentVehicle.parking} added")
+			} catch (e: SQLException) {
+				Log.w(TAG, e.message) // this mean the parking already exists, so no problem here
+				callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+			}
+
+			if (isNew) {
+				Log.w(TAG, "Saving new vehicle $currentVehicle ...")
+				val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
+				populateCurrent(current)
+				return if (current != null) {
+					populateVehicleList()
+					true
+				} else
+					false
+			} else {
+				Log.w(TAG, "Updating existing vehicle $currentVehicle ...")
+				return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
+					populateCurrent(currentVehicle)
+					true
+				} else
+					false
+			}
 		}
 	}
 
@@ -126,7 +139,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		parkingAdaptor = ArrayAdapter(context, android.R.layout.simple_list_item_1)
 	}
 
-	fun populateVehicleList() {
+	private fun populateVehicleList() {
 		val v = DbContract.Vehicle.selectAll(dbHelper!!)
 		vehicleAdaptor.clear()
 		vehicleAdaptor.addAll(v.map {
@@ -134,7 +147,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		})
 	}
 
-	fun populateParkingList() {
+	private fun populateParkingList() {
 		val p = DbContract.Parking.select(dbHelper!!)
 		parkingAdaptor.clear()
 		parkingAdaptor.addAll(p.map {
@@ -142,7 +155,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		})
 	}
 
-	private fun populateCurrent(current: VehicleRecord?) {
+	fun populateCurrent(current: VehicleRecord?) {
 		if (current != null) {
 			currentVehicle = current
 			isUpdated = false

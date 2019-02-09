@@ -2,6 +2,7 @@ package org.sea9.android.woc.data
 
 import android.content.ContentValues
 import android.database.Cursor
+import android.database.DatabaseUtils
 import android.provider.BaseColumns
 import java.util.*
 
@@ -235,7 +236,8 @@ object DbContract {
 				var result: VehicleRecord? = null
 				db.beginTransactionNonExclusive()
 				try {
-					if (db.update(TABLE, newRow0, null, null) > 0) {
+					val count = DatabaseUtils.queryNumEntries(db, TABLE)
+					if ((count == 0L) || db.update(TABLE, newRow0, null, null) > 0) {
 						val ret = db.insertOrThrow(TABLE, null, newRow1)
 						if (ret >= 0) {
 							db.setTransactionSuccessful()

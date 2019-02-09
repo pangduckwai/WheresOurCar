@@ -63,7 +63,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 					textVehicle.showDropDown()
 				}, 100)
 			} else {
-				Log.w(TAG, "Vehicle lose focus ${textVehicle.text}")
 				retainedContext.switchVehicle(textVehicle.text.toString())
 				view.clearFocus()
 			}
@@ -105,7 +104,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 					textParking.showDropDown()
 				}, 100)
 			} else {
-				Log.w(TAG, "Parking lose focus ${textParking.text}")
 				retainedContext.updateParking(textParking.text.toString())
 				view.clearFocus()
 			}
@@ -137,7 +135,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 		textFloor.setOnFocusChangeListener { view, hasFocus ->
 			if (!hasFocus) {
-				Log.w(TAG, "Floor lose focus ${textFloor.text}")
 				retainedContext.updateFloor(textFloor.text.toString())
 				view.clearFocus()
 			}
@@ -156,7 +153,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 		textLot.setOnFocusChangeListener { view, hasFocus ->
 			if (!hasFocus) {
-				Log.w(TAG, "Lot lose focus ${textLot.text}")
 				retainedContext.updateLot(textLot.text.toString())
 				view.clearFocus()
 			}
@@ -164,7 +160,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 
 		textUpdate = findViewById(R.id.update)
 
-		fab.setOnClickListener { view ->
+		fab.setOnClickListener {
 			saveChanges()
 		}
 	}
@@ -230,7 +226,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 			var view = currentFocus
 			if (view == null) view = View(this)
 			view.postDelayed({
-				Log.w(TAG, "Clearing focus!!!")
 				(getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
 				view.clearFocus()
 			}, 100)
@@ -286,6 +281,11 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 	}
 
 	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when (reference) {
+			MSG_DIALOG_NEW_VEHICLE -> {
+				retainedContext.populateCurrent(null)
+			}
+		}
 		dialogShowing = false
 		dialog?.dismiss()
 	}
