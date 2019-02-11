@@ -15,7 +15,6 @@ import android.os.IBinder
 import android.util.Log
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
-import org.sea9.android.woc.data.VehicleRecord
 
 /**
  * Someone online suggested to pass the ID of the appwidget-provider resource (R.xml.appwidget_wmc in /xml/appwidget_wmc.xml for WMC) to
@@ -34,11 +33,11 @@ class MainAppWidget: AppWidgetProvider() {
 		const val TAG = "woc.widget"
 		const val KEY_FLR = "woc.floor"
 		const val KEY_LOT = "woc.lot"
-		const val SFX_FLR = "/F"
-		const val PFX_LOT = "P"
+		private const val SFX_FLR = "/F"
+		private const val PFX_LOT = "P"
 
 		private fun populate(context: Context?, floor: String?, lot: String?) {
-			Log.d(TAG, "Populating app widget $floor / $lot")
+			Log.w(TAG, "Populating app widget $floor / $lot")
 			context?.let {
 				val view = RemoteViews(it.packageName, R.layout.app_widget)
 
@@ -86,7 +85,8 @@ class MainAppWidget: AppWidgetProvider() {
 				.setInexactRepeating(
 					AlarmManager.RTC,
 					System.currentTimeMillis(),
-					AlarmManager.INTERVAL_HALF_HOUR,
+//					AlarmManager.INTERVAL_HALF_HOUR,
+					60000, //TODO FOR Testing
 					PendingIntent.getService(it, 0,
 						Intent(it, UpdateService::class.java),
 						PendingIntent.FLAG_CANCEL_CURRENT
@@ -127,6 +127,7 @@ class MainAppWidget: AppWidgetProvider() {
 				populate(this, record.floor, record.lot)
 			}
 
+			helper.close()
 			return START_NOT_STICKY
 		}
 

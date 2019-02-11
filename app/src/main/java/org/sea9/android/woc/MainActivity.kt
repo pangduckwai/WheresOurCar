@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		retainedContext.updateFloor(textFloor.text.toString())
 		retainedContext.updateLot(textLot.text.toString())
 		retainedContext.updateParking(textParking.text.toString())
-		if (retainedContext.saveVehicle()) { //TODO HERE Update widget
+		if (retainedContext.saveVehicle()) {
 			doNotify("Vehicle location updated")
 			finish()
 		}
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 			MessageDialog.getInstance(ref, msg, null).show(supportFragmentManager, MessageDialog.TAG)
 		} else {
 			val obj = Toast.makeText(this, msg, Toast.LENGTH_LONG )
-			obj.setGravity(Gravity.BOTTOM, 0, 0)
+			obj.setGravity(Gravity.CENTER, 0, 0)
 			obj.show()
 		}
 	}
