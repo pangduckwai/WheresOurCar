@@ -11,4 +11,5 @@
 	<dimen name="text_normal">10pt</dimen>
 	<dimen name="text_medium">8pt</dimen>
 	<dimen name="text_small">6pt</dimen>
+	<dimen name="text_widget">15sp</dimen>
 </resources>
