@@ -113,7 +113,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 				val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
 				populateCurrent(current)
 				return if (current != null) {
-					MainAppWidget.update(context, currentVehicle.floor, currentVehicle.lot)
 					populateVehicleList()
 					true
 				} else
@@ -121,7 +120,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 			} else {
 				Log.w(TAG, "Updating existing vehicle $currentVehicle ...")
 				return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
-					MainAppWidget.update(context, currentVehicle.floor, currentVehicle.lot)
 					populateCurrent(currentVehicle)
 					true
 				} else

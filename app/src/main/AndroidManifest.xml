@@ -38,7 +38,6 @@
 					android:name="android.appwidget.provider"
 					android:resource="@xml/app_widget_info"/>
 		</receiver>
-		<service android:name=".MainAppWidget$UpdateService" />
 	</application>
 
 </manifest>

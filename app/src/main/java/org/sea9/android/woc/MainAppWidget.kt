@@ -1,6 +1,5 @@
 package org.sea9.android.woc
 
-import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -8,10 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import android.app.PendingIntent
-import android.app.Service
 import android.content.ComponentName
-import android.os.AsyncTask
-import android.os.IBinder
 import android.util.Log
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
@@ -31,66 +27,48 @@ import org.sea9.android.woc.data.DbHelper
 class MainAppWidget: AppWidgetProvider() {
 	companion object {
 		const val TAG = "woc.widget"
-		const val KEY_FLR = "woc.floor"
-		const val KEY_LOT = "woc.lot"
 		private const val SFX_FLR = "/F"
 		private const val PFX_LOT = "P"
 
-		private fun populate(context: Context?, floor: String?, lot: String?) {
-			Log.w(TAG, "Populating app widget $floor / $lot")
+		fun update(context: Context?) {
 			context?.let {
-				val view = RemoteViews(it.packageName, R.layout.app_widget)
-
-				floor?.let {s ->
-					view.setTextViewText(R.id.floor, if (s.matches("[0-9]+".toRegex())) s + SFX_FLR else s)
-				}
-
-				lot?.let {s ->
-					view.setTextViewText(R.id.lot, if (s.toUpperCase().startsWith(PFX_LOT)) s else PFX_LOT + s)
-				}
-
-				view.setOnClickPendingIntent(
-					R.id.start,
-					PendingIntent.getActivity(it, 0, Intent(it, MainActivity::class.java), 0)
-				)
-
-				AppWidgetManager.getInstance(it).updateAppWidget(
-					ComponentName(it, MainAppWidget::class.java),
-					view
-				)
-			}
-		}
-
-		fun update(context: Context?, floor: String?, lot: String?) {
-			context?.let {
-				AsyncUpdateWidgetTask(it.applicationContext).execute(floor, lot)
+				Log.w(TAG, "Updating app widget with explict request...")
+				val intent = Intent(context, MainAppWidget::class.java)
+				intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+				context.sendBroadcast(intent)
 			}
 		}
 	}
 
 	override fun onReceive(context: Context?, intent: Intent?) {
 		if (intent?.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-			populate(context, intent.getStringExtra(KEY_FLR), intent.getStringExtra(KEY_LOT))
+			Log.w(TAG, "AppWidget onReceive()...")
+			updateWidget(context)
 		}
 		super.onReceive(context, intent)
 	}
 
 	override fun onUpdate(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetIds: IntArray?) {
-		context?.startService(Intent(context, UpdateService::class.java))
+		context?.let {
+			Log.w(TAG, "AppWidget onUpdate()...")
+			appWidgetIds?.forEach {_ ->
+				updateWidget(context)
+			}
+		}
 	}
 
 	override fun onEnabled(context: Context?) {
 		context?.let {
+			Log.w(TAG, "AppWidget onEnabled, setting alarm...")
+			val intent = Intent(it, MainAppWidget::class.java)
+			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
 				.setInexactRepeating(
 					AlarmManager.RTC,
 					System.currentTimeMillis(),
 //					AlarmManager.INTERVAL_HALF_HOUR,
-					60000, //TODO FOR Testing
-					PendingIntent.getService(it, 0,
-						Intent(it, UpdateService::class.java),
-						PendingIntent.FLAG_CANCEL_CURRENT
-					)
+					70000L, //TODO FOR Testing
+					PendingIntent.getBroadcast(it, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
 				)
 		}
 		super.onEnabled(context)
@@ -98,55 +76,48 @@ class MainAppWidget: AppWidgetProvider() {
 
 	override fun onDisabled(context: Context?) {
 		context?.let {
+			Log.w(TAG, "AppWidget onDisabled, clearing alarm...")
+			val intent = Intent(it, MainAppWidget::class.java)
+			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
-				.cancel(
-					PendingIntent.getService(it, 0,
-						Intent(it, UpdateService::class.java),
-						PendingIntent.FLAG_CANCEL_CURRENT
-					)
-				)
+				.cancel(PendingIntent.getBroadcast(it, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT))
 		}
 		super.onDisabled(context)
 	}
 
-	class UpdateService: Service() {
-		override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+	private fun updateWidget(context: Context?) {
+		context?.let {
 			val helper = DbHelper(object : DbHelper.Caller {
 				override fun getContext(): Context? {
-					return this@UpdateService
+					return context
 				}
-
 				override fun onReady() {
-					Log.w(TAG, "DB connection ready for service")
+					Log.w(TAG, "DB connection ready for app widget")
 				}
 			})
-			helper.writableDatabase.execSQL(DbContract.SQL_CONFIG)
+
+			val views = RemoteViews(it.packageName, R.layout.app_widget)
+
+			views.setOnClickPendingIntent(
+				R.id.start,
+				PendingIntent.getActivity(it, 0, Intent(it, MainActivity::class.java), 0)
+			)
 
 			val record = DbContract.Vehicle.select(helper)
-			record?.let {
-				populate(this, record.floor, record.lot)
+			record?.let {rec ->
+				rec.floor?.let {s ->
+					views.setTextViewText(R.id.floor, if (s.matches("[0-9]+".toRegex())) s + SFX_FLR else s)
+				}
+				rec.lot?. let {s ->
+					views.setTextViewText(R.id.lot, if (s.toUpperCase().startsWith(PFX_LOT)) s else PFX_LOT + s)
+				}
 			}
-
 			helper.close()
-			return START_NOT_STICKY
-		}
 
-		override fun onBind(intent: Intent?): IBinder? {
-			return null
-		}
-	}
-
-	@SuppressLint("StaticFieldLeak")
-	private class AsyncUpdateWidgetTask(private val context: Context): AsyncTask<String, Void, Void>() {
-		override fun doInBackground(vararg params: String?): Void? {
-			if (params.size == 2) {
-				val intent = Intent(context, MainAppWidget::class.java)
-				intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-				intent.putExtra(MainAppWidget.KEY_FLR, params[0])
-				intent.putExtra(MainAppWidget.KEY_LOT, params[1])
-				context.sendBroadcast(intent)
-			}
-			return null
+			AppWidgetManager.getInstance(it).updateAppWidget(
+				ComponentName(it, MainAppWidget::class.java),
+				views
+			)
 		}
 	}
 }

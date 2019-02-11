@@ -242,6 +242,8 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 			else
 				Date())
 		)
+
+		MainAppWidget.update(this)
 	}
 
 	override fun onNewVehicle(vehicle: String) {
