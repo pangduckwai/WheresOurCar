@@ -32,7 +32,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 		fun update(context: Context?) {
 			context?.let {
-				Log.w(TAG, "Updating app widget with explict request...")
+				Log.w(TAG, "Updating app widget with explicit request...")
 				val intent = Intent(context, MainAppWidget::class.java)
 				intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 				context.sendBroadcast(intent)
@@ -87,6 +87,13 @@ class MainAppWidget: AppWidgetProvider() {
 
 	private fun updateWidget(context: Context?) {
 		context?.let {
+			val manager = AppWidgetManager.getInstance(it)
+			val component = ComponentName(it, this::class.java)
+			if (manager.getAppWidgetIds(component).isEmpty()) {
+				Log.w(TAG, "No widget are currently in use")
+				return
+			}
+
 			val helper = DbHelper(object : DbHelper.Caller {
 				override fun getContext(): Context? {
 					return context
@@ -105,6 +112,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 			val record = DbContract.Vehicle.select(helper)
 			record?.let {rec ->
+				Log.w(TAG, "Updating widget: ${rec.floor} / ${rec.lot}")
 				rec.floor?.let {s ->
 					views.setTextViewText(R.id.floor, if (s.matches("[0-9]+".toRegex())) s + SFX_FLR else s)
 				}
@@ -114,10 +122,11 @@ class MainAppWidget: AppWidgetProvider() {
 			}
 			helper.close()
 
-			AppWidgetManager.getInstance(it).updateAppWidget(
-				ComponentName(it, MainAppWidget::class.java),
-				views
-			)
+//			AppWidgetManager.getInstance(it).updateAppWidget(
+//				ComponentName(it, MainAppWidget::class.java),
+//				views
+//			)
+			manager.updateAppWidget(component, views)
 		}
 	}
 }

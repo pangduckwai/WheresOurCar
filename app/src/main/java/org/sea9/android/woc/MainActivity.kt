@@ -22,6 +22,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		const val EMPTY = ""
 		const val MSG_DIALOG_NOTIFY  = 90001
 		const val MSG_DIALOG_NEW_VEHICLE = 90002
+		const val MSG_DIALOG_PENDING_UPDATE = 90003
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -161,7 +162,15 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		textUpdate = findViewById(R.id.update)
 
 		fab.setOnClickListener {
-			saveChanges()
+			retainedContext.updateFloor(textFloor.text.toString())
+			retainedContext.updateLot(textLot.text.toString())
+			retainedContext.updateParking(textParking.text.toString())
+			if (retainedContext.isUpdated()) {
+				doNotify(getString(R.string.msg_discarding))
+				retainedContext.populateCurrent(null, true)
+				retainedContext.resetStatus()
+			}
+			clearKeyboard(currentFocus ?: it)
 		}
 	}
 
@@ -188,15 +197,30 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 	}
 
+	override fun onBackPressed() {
+		saveChanges()
+		super.onBackPressed()
+	}
+
+	/*===================
+	 * Utility functions
+	 */
 	private fun saveChanges() {
 		retainedContext.updateFloor(textFloor.text.toString())
 		retainedContext.updateLot(textLot.text.toString())
 		retainedContext.updateParking(textParking.text.toString())
 		if (retainedContext.saveVehicle()) {
-			doNotify("Vehicle location updated")
-			finish()
+			doNotify(getString(R.string.msg_updated))
 		}
 	}
+
+	private fun clearKeyboard(view: View) {
+		view.postDelayed({
+			(getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
+			view.clearFocus()
+		}, 100)
+	}
+	//===================
 
 	/*======================================================
 	 * Common implementation of several Callback interfaces
@@ -225,10 +249,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		if (clearFocus) {
 			var view = currentFocus
 			if (view == null) view = View(this)
-			view.postDelayed({
-				(getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
-				view.clearFocus()
-			}, 100)
+			clearKeyboard(view)
 		}
 
 		val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
@@ -242,18 +263,33 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 			else
 				Date())
 		)
-
-		MainAppWidget.update(this)
 	}
 
 	override fun onNewVehicle(vehicle: String) {
 		if (!dialogShowing) {
 			val bundle = Bundle()
 			bundle.putString(MainContext.TAG, vehicle)
-			MessageDialog.getOkayCancelDialog(MSG_DIALOG_NEW_VEHICLE, "Add new vehicle '$vehicle'?", bundle)
+			MessageDialog.getOkayCancelDialog(MSG_DIALOG_NEW_VEHICLE, getString(R.string.msg_add_new, vehicle), bundle)
 				.show(supportFragmentManager, MessageDialog.TAG)
 			dialogShowing = true
 		}
+	}
+
+	override fun onSwitchVehicle(vehicle: String) {
+		if (!dialogShowing) {
+			val bundle = Bundle()
+			bundle.putString(MainContext.TAG, vehicle)
+			MessageDialog.getInstance(MSG_DIALOG_PENDING_UPDATE, bundle, 6, null,
+					getString(R.string.msg_discard), null,
+					getString(R.string.button_yes),
+					getString(R.string.button_no))
+				.show(supportFragmentManager, MessageDialog.TAG)
+			dialogShowing = true
+		}
+	}
+
+	override fun onUpdated() {
+		MainAppWidget.update(this)
 	}
 	//================================================
 
@@ -274,17 +310,30 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		when (reference) {
 			MSG_DIALOG_NEW_VEHICLE -> {
 				val vehicle = bundle?.getString(MainContext.TAG) ?: EMPTY
-				doNotify("Adding new vehicle '$vehicle'")
+				doNotify(getString(R.string.msg_adding, vehicle))
 				retainedContext.newVehicle(vehicle)
+				dialogShowing = false
+				dialog?.dismiss()
+			}
+			MSG_DIALOG_PENDING_UPDATE -> {
+				val vehicle = bundle?.getString(MainContext.TAG) ?: EMPTY
+				dialogShowing = false
+				dialog?.dismiss()
+				retainedContext.resetStatus()
+				retainedContext.switchVehicle(vehicle)
 			}
 		}
-		dialogShowing = false
-		dialog?.dismiss()
 	}
 
 	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
 		when (reference) {
 			MSG_DIALOG_NEW_VEHICLE -> {
+				doNotify(getString(R.string.msg_discard_new, bundle?.getString(MainContext.TAG) ?: EMPTY))
+				retainedContext.populateCurrent(null, true)
+				retainedContext.resetStatus()
+			}
+			MSG_DIALOG_PENDING_UPDATE -> {
+				doNotify(getString(R.string.msg_retaining))
 				retainedContext.populateCurrent(null)
 			}
 		}

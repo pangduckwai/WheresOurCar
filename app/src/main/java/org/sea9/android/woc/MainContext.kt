@@ -17,6 +17,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.retained_frag"
 		const val PATTERN_DATE = "yyyy-MM-dd HH:mm:ss"
+		private const val STATUS_NORMAL = 0
+		private const val STATUS_UPDATED = 1
+		private const val STATUS_ADDED = 2
 
 		fun getInstance(sfm: FragmentManager): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -32,71 +35,82 @@ class MainContext: Fragment(), DbHelper.Caller {
 	private fun setDbHelper(helper: DbHelper) {
 		dbHelper = helper
 	}
-//	fun getDbHelper(): DbHelper? {
-////		return dbHelper
-////	}
 	private fun isDbReady(): Boolean {
 		return ((dbHelper != null) && dbHelper!!.ready)
 	}
 
-	var isUpdated = false
-		private set
-
-	private var isNew = false
+	private var status = STATUS_NORMAL
+	fun isUpdated(): Boolean {
+		return (status > 0)
+	}
+	fun resetStatus() {
+		status = STATUS_NORMAL
+	}
 
 	private lateinit var currentVehicle: VehicleRecord
 	fun updateParking(parking: String) {
 		if (parking != currentVehicle.parking) {
+			Log.w(TAG, "updateParking $parking...")
 			currentVehicle.parking = parking
-			isUpdated = true
+			status = status or STATUS_UPDATED
 			populateCurrent(null)
 		}
 	}
 	fun updateFloor(floor: String) {
-		if (floor != currentVehicle.floor) {
+		if ((floor.isNotBlank() && (floor != currentVehicle.floor)) ||
+			(floor.isBlank() && (currentVehicle.floor?.isNotBlank() == true))) {
+			Log.w(TAG, "updateFloor $floor...")
 			currentVehicle.floor = floor
-			isUpdated = true
+			status = status or STATUS_UPDATED
 			populateCurrent(null)
 		}
 	}
 	fun updateLot(lot: String) {
-		if (lot != currentVehicle.lot) {
+		if ((lot.isNotBlank() && (lot != currentVehicle.lot)) ||
+			(lot.isBlank() && (currentVehicle.lot?.isNotBlank() == true))) {
+			Log.w(TAG, "updateLot $lot...")
 			currentVehicle.lot = lot
-			isUpdated = true
+			status = status or STATUS_UPDATED
 			populateCurrent(null)
 		}
 	}
 	fun switchVehicle(vehicle: String) {
 		if (vehicle.isNotBlank() && (vehicle != currentVehicle.name)) {
-			val list = DbContract.Vehicle.select(dbHelper!!, vehicle)
-			when {
-				list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
-				list.size == 1 -> {
-					callback?.doNotify("Switch to '$vehicle'")
-					val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
-					populateCurrent(current)
-					isNew = false
-				}
-				else -> {
-					callback?.onNewVehicle(vehicle)
+			if (isUpdated()) {
+				callback?.onSwitchVehicle(vehicle)
+			} else {
+				val list = DbContract.Vehicle.select(dbHelper!!, vehicle)
+				when {
+					list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
+					list.size == 1 -> {
+						callback?.doNotify("Switch to '$vehicle'")
+						val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
+						populateCurrent(current)
+						resetStatus()
+						callback?.onUpdated()
+					}
+					else -> {
+						callback?.onNewVehicle(vehicle)
+					}
 				}
 			}
 		}
 	}
 	fun newVehicle(vehicle: String) {
 		if (vehicle.isNotBlank()) {
+			Log.w(TAG, "newVehicle...")
 			val current = VehicleRecord()
 			current.name = vehicle
 			populateCurrent(current)
-			isNew = true
+			status = STATUS_ADDED //set the is_new flag
 		}
 	}
 	fun saveVehicle(): Boolean {
-		if (currentVehicle.name.isBlank()) {
-			callback?.doNotify("Vehicle name cannot be empty")
-			return false
-		} else if (!isUpdated) {
+		if (status == STATUS_NORMAL) {
 			callback?.doNotify("No change made")
+			return false
+		} else if (currentVehicle.name.isBlank()) {
+			callback?.doNotify("Vehicle name cannot be empty")
 			return false
 		} else {
 			try {
@@ -108,12 +122,14 @@ class MainContext: Fragment(), DbHelper.Caller {
 				callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
 			}
 
-			if (isNew) {
+			if ((status and STATUS_ADDED) > 0) { //isNew
 				Log.w(TAG, "Saving new vehicle $currentVehicle ...")
 				val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
 				populateCurrent(current)
 				return if (current != null) {
 					populateVehicleList()
+					resetStatus()
+					callback?.onUpdated()
 					true
 				} else
 					false
@@ -121,6 +137,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 				Log.w(TAG, "Updating existing vehicle $currentVehicle ...")
 				return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
 					populateCurrent(currentVehicle)
+					resetStatus()
+					callback?.onUpdated()
 					true
 				} else
 					false
@@ -155,13 +173,16 @@ class MainContext: Fragment(), DbHelper.Caller {
 		})
 	}
 
-	fun populateCurrent(current: VehicleRecord?) {
-		if (current != null) {
+	fun populateCurrent(current: VehicleRecord?, retrieve: Boolean) {
+		if (current == null) {
+			if (retrieve) currentVehicle = DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord()
+		} else {
 			currentVehicle = current
-			isUpdated = false
-			isNew = false
 		}
-		callback?.onPopulated(currentVehicle, !isUpdated)
+		callback?.onPopulated(currentVehicle, ((status and STATUS_UPDATED) == 0)) //true if not updated
+	}
+	fun populateCurrent(current: VehicleRecord?) {
+		populateCurrent(current, false)
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -178,7 +199,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		} else {
 			populateVehicleList()
 			populateParkingList()
-			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
+			populateCurrent(null, true)
 		}
 	}
 
@@ -197,6 +218,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 	interface Callback {
 		fun onPopulated(data: VehicleRecord?, clearFocus: Boolean)
 		fun onNewVehicle(vehicle: String)
+		fun onSwitchVehicle(vehicle: String)
+		fun onUpdated()
 		fun doNotify(msg: String)
 		fun doNotify(msg: String, stay: Boolean)
 		fun doNotify(ref: Int, msg: String, stay: Boolean)
