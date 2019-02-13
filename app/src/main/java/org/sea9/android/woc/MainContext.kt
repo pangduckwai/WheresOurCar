@@ -187,6 +187,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 		populateCurrent(current, false)
 	}
 
+	/*=====================================================
+	 * Lifecycle method of android.support.v4.app.Fragment
+	 */
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
@@ -250,11 +253,13 @@ class MainContext: Fragment(), DbHelper.Caller {
 		Log.d(TAG, "db ready")
 		activity?.runOnUiThread {
 			populateVehicleList()
-			populateParkingList()
 			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
 		}
 	}
 
+	/*========================
+	 * Init DB asynchronously
+	 */
 	private fun initDb() {
 		Log.d(TAG, "init db")
 		AsyncDbInitTask(this).execute()
@@ -263,7 +268,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		override fun doInBackground(vararg params: Void?): Void? {
 			val helper = DbHelper(caller)
 			caller.setDbHelper(helper)
-			helper.writableDatabase.execSQL(DbContract.SQL_CONFIG)
+			caller.populateParkingList() //Call this instead of SQL_CONFIG since this app does not need foreign key
 			return null
 		}
 	}
