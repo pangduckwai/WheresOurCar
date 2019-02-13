@@ -37,7 +37,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 	@SuppressLint("ClickableViewAccessibility")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		Log.d(TAG, "onCreate()")
 		setContentView(R.layout.app_main)
 		setSupportActionBar(toolbar)
 		retainedContext = MainContext.getInstance(supportFragmentManager)
@@ -176,7 +175,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 
 	override fun onResume() {
 		super.onResume()
-		Log.d(TAG, "onResume()")
 		textVehicle.setAdapter(retainedContext.vehicleAdaptor)
 		textParking.setAdapter(retainedContext.parkingAdaptor)
 	}
@@ -289,6 +287,7 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 	}
 
 	override fun onUpdated() {
+		Log.d(TAG, "Updating app widget")
 		MainAppWidget.update(this)
 	}
 	//================================================

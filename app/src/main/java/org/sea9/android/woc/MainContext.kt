@@ -50,7 +50,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 	private lateinit var currentVehicle: VehicleRecord
 	fun updateParking(parking: String) {
 		if (parking != currentVehicle.parking) {
-			Log.w(TAG, "updateParking $parking...")
+			Log.d(TAG, "updateParking $parking...")
 			currentVehicle.parking = parking
 			status = status or STATUS_UPDATED
 			populateCurrent(null)
@@ -59,7 +59,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 	fun updateFloor(floor: String) {
 		if ((floor.isNotBlank() && (floor != currentVehicle.floor)) ||
 			(floor.isBlank() && (currentVehicle.floor?.isNotBlank() == true))) {
-			Log.w(TAG, "updateFloor $floor...")
+			Log.d(TAG, "updateFloor $floor...")
 			currentVehicle.floor = floor
 			status = status or STATUS_UPDATED
 			populateCurrent(null)
@@ -68,7 +68,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 	fun updateLot(lot: String) {
 		if ((lot.isNotBlank() && (lot != currentVehicle.lot)) ||
 			(lot.isBlank() && (currentVehicle.lot?.isNotBlank() == true))) {
-			Log.w(TAG, "updateLot $lot...")
+			Log.d(TAG, "updateLot $lot...")
 			currentVehicle.lot = lot
 			status = status or STATUS_UPDATED
 			populateCurrent(null)
@@ -98,7 +98,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 	fun newVehicle(vehicle: String) {
 		if (vehicle.isNotBlank()) {
-			Log.w(TAG, "newVehicle...")
+			Log.d(TAG, "newVehicle...")
 			val current = VehicleRecord()
 			current.name = vehicle
 			populateCurrent(current)
@@ -113,17 +113,19 @@ class MainContext: Fragment(), DbHelper.Caller {
 			callback?.doNotify("Vehicle name cannot be empty")
 			return false
 		} else {
-			try {
-				DbContract.Parking.insert(dbHelper!!, currentVehicle.parking)
-				populateParkingList()
-				callback?.doNotify("New parking ${currentVehicle.parking} added")
-			} catch (e: SQLException) {
-				Log.w(TAG, e.message) // this mean the parking already exists, so no problem here
-				callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+			if (currentVehicle.parking.isNotBlank()) {
+				try {
+					DbContract.Parking.insert(dbHelper!!, currentVehicle.parking)
+					populateParkingList()
+					callback?.doNotify("New parking ${currentVehicle.parking} added")
+				} catch (e: SQLException) {
+					Log.d(TAG, e.message) // this mean the parking already exists, so no problem here
+					callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+				}
 			}
 
 			if ((status and STATUS_ADDED) > 0) { //isNew
-				Log.w(TAG, "Saving new vehicle $currentVehicle ...")
+				Log.d(TAG, "Saving new vehicle $currentVehicle ...")
 				val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
 				populateCurrent(current)
 				return if (current != null) {
@@ -134,7 +136,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 				} else
 					false
 			} else {
-				Log.w(TAG, "Updating existing vehicle $currentVehicle ...")
+				Log.d(TAG, "Updating existing vehicle $currentVehicle ...")
 				return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
 					populateCurrent(currentVehicle)
 					resetStatus()

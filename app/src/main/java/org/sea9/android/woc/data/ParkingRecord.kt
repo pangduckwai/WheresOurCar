@@ -13,13 +13,6 @@ data class ParkingRecord(
 		const val MOD = "modified"
 	}
 
-	constructor(json: JSONObject) : this(
-		json.getLong(RID),
-		json.getString(NAM),
-		json.optLong(MOD)
-	)
-	constructor(json: String) : this(JSONObject(json))
-
 	override fun toString(): String {
 		val result = JSONObject()
 		result.put(RID, rid)

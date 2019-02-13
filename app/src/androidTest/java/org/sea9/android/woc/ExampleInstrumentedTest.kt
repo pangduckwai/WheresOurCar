@@ -5,7 +5,6 @@ import android.database.SQLException
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import android.util.Log
-import org.junit.AfterClass
 
 import org.junit.Test
 import org.junit.runner.RunWith

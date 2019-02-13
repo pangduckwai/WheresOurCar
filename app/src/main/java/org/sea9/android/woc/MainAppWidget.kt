@@ -32,7 +32,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 		fun update(context: Context?) {
 			context?.let {
-				Log.w(TAG, "Updating app widget with explicit request...")
+				Log.d(TAG, "Updating app widget with explicit request...")
 				val intent = Intent(context, MainAppWidget::class.java)
 				intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 				context.sendBroadcast(intent)
@@ -42,7 +42,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 	override fun onReceive(context: Context?, intent: Intent?) {
 		if (intent?.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-			Log.w(TAG, "AppWidget onReceive()...")
+			Log.d(TAG, "AppWidget onReceive()...")
 			updateWidget(context)
 		}
 		super.onReceive(context, intent)
@@ -50,7 +50,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 	override fun onUpdate(context: Context?, appWidgetManager: AppWidgetManager?, appWidgetIds: IntArray?) {
 		context?.let {
-			Log.w(TAG, "AppWidget onUpdate()...")
+			Log.d(TAG, "AppWidget onUpdate()...")
 			appWidgetIds?.forEach {_ ->
 				updateWidget(context)
 			}
@@ -59,15 +59,14 @@ class MainAppWidget: AppWidgetProvider() {
 
 	override fun onEnabled(context: Context?) {
 		context?.let {
-			Log.w(TAG, "AppWidget onEnabled, setting alarm...")
+			Log.d(TAG, "AppWidget onEnabled, setting alarm...")
 			val intent = Intent(it, MainAppWidget::class.java)
 			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
 				.setInexactRepeating(
 					AlarmManager.RTC,
 					System.currentTimeMillis(),
-//					AlarmManager.INTERVAL_HALF_HOUR,
-					70000L, //TODO FOR Testing
+					AlarmManager.INTERVAL_DAY,
 					PendingIntent.getBroadcast(it, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
 				)
 		}
@@ -76,7 +75,7 @@ class MainAppWidget: AppWidgetProvider() {
 
 	override fun onDisabled(context: Context?) {
 		context?.let {
-			Log.w(TAG, "AppWidget onDisabled, clearing alarm...")
+			Log.d(TAG, "AppWidget onDisabled, clearing alarm...")
 			val intent = Intent(it, MainAppWidget::class.java)
 			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
@@ -90,7 +89,7 @@ class MainAppWidget: AppWidgetProvider() {
 			val manager = AppWidgetManager.getInstance(it)
 			val component = ComponentName(it, this::class.java)
 			if (manager.getAppWidgetIds(component).isEmpty()) {
-				Log.w(TAG, "No widget are currently in use")
+				Log.i(TAG, "No widget are currently in use")
 				return
 			}
 
@@ -99,7 +98,7 @@ class MainAppWidget: AppWidgetProvider() {
 					return context
 				}
 				override fun onReady() {
-					Log.w(TAG, "DB connection ready for app widget")
+					Log.d(TAG, "DB connection ready for app widget")
 				}
 			})
 
@@ -110,22 +109,20 @@ class MainAppWidget: AppWidgetProvider() {
 				PendingIntent.getActivity(it, 0, Intent(it, MainActivity::class.java), 0)
 			)
 
-			val record = DbContract.Vehicle.select(helper)
-			record?.let {rec ->
-				Log.w(TAG, "Updating widget: ${rec.floor} / ${rec.lot}")
+			val rec = DbContract.Vehicle.select(helper)
+			if (rec != null) {
+				Log.d(TAG, "Updating widget: ${rec.floor} / ${rec.lot}")
 				rec.floor?.let {s ->
 					views.setTextViewText(R.id.floor, if (s.matches("[0-9]+".toRegex())) s + SFX_FLR else s)
 				}
 				rec.lot?. let {s ->
-					views.setTextViewText(R.id.lot, if (s.toUpperCase().startsWith(PFX_LOT)) s else PFX_LOT + s)
+					if (s.isNotBlank())
+						views.setTextViewText(R.id.lot, if (s.toUpperCase().startsWith(PFX_LOT)) s else PFX_LOT + s)
 				}
+			} else {
+				Log.i(TAG, "No current record found")
 			}
 			helper.close()
-
-//			AppWidgetManager.getInstance(it).updateAppWidget(
-//				ComponentName(it, MainAppWidget::class.java),
-//				views
-//			)
 			manager.updateAppWidget(component, views)
 		}
 	}
