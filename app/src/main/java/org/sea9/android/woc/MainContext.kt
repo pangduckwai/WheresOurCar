@@ -187,6 +187,11 @@ class MainContext: Fragment(), DbHelper.Caller {
 		populateCurrent(current, false)
 	}
 
+	/*==========================
+	 * Firebase Cloud Messaging
+	 */
+	private lateinit var mode: MODE
+
 	/*=====================================================
 	 * Lifecycle method of android.support.v4.app.Fragment
 	 */
@@ -271,5 +276,10 @@ class MainContext: Fragment(), DbHelper.Caller {
 			caller.populateParkingList() //Call this instead of SQL_CONFIG since this app does not need foreign key
 			return null
 		}
+	}
+
+	//========================
+	enum class MODE {
+		PUBLISHER, SUBSCRIBER
 	}
 }
