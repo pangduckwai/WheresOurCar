@@ -57,33 +57,6 @@ class MainAppWidget: AppWidgetProvider() {
 		}
 	}
 
-	override fun onEnabled(context: Context?) {
-		context?.let {
-			Log.d(TAG, "AppWidget onEnabled, setting alarm...")
-			val intent = Intent(it, MainAppWidget::class.java)
-			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
-				.setInexactRepeating(
-					AlarmManager.RTC,
-					System.currentTimeMillis(),
-					AlarmManager.INTERVAL_DAY,
-					PendingIntent.getBroadcast(it, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
-				)
-		}
-		super.onEnabled(context)
-	}
-
-	override fun onDisabled(context: Context?) {
-		context?.let {
-			Log.d(TAG, "AppWidget onDisabled, clearing alarm...")
-			val intent = Intent(it, MainAppWidget::class.java)
-			intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-			(it.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
-				.cancel(PendingIntent.getBroadcast(it, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT))
-		}
-		super.onDisabled(context)
-	}
-
 	private fun updateWidget(context: Context?) {
 		context?.let {
 			val manager = AppWidgetManager.getInstance(it)
