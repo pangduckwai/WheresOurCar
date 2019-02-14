@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.*
@@ -178,8 +177,6 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		super.onResume()
 		textVehicle.setAdapter(retainedContext.vehicleAdaptor)
 		textParking.setAdapter(retainedContext.parkingAdaptor)
-
-		val preference = PreferenceManager.getDefaultSharedPreferences(this)
 	}
 
 	override fun onCreateOptionsMenu(menu: Menu): Boolean {

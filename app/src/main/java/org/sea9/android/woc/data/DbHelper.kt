@@ -60,8 +60,8 @@ class DbHelper(private val caller: Caller, isTest: Boolean):
         caller.onReady()
     }
 
-    /*=========================================
-     * Access interfaces to the ContextFragment
+    /*======================================
+     * Access interfaces to the MainContext
      */
     interface Caller {
         fun getContext(): Context?
