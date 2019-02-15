@@ -1,6 +1,5 @@
 package org.sea9.android.woc
 
-import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
