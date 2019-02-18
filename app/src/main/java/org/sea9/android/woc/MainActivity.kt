@@ -15,7 +15,9 @@ import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.woc.messaging.MessagingService
+import org.sea9.android.woc.ui.AboutDialog
 import org.sea9.android.woc.ui.MessageDialog
+import org.sea9.android.woc.ui.SettingsDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -195,7 +197,14 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		return when (item.itemId) {
-			R.id.action_settings -> true
+			R.id.action_settings -> {
+				SettingsDialog.getInstance().show(supportFragmentManager, SettingsDialog.TAG)
+				true
+			}
+			R.id.action_about -> {
+				AboutDialog.getInstance().show(supportFragmentManager, AboutDialog.TAG)
+				true
+			}
 			else -> super.onOptionsItemSelected(item)
 		}
 	}
