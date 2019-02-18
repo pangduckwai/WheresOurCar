@@ -14,7 +14,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
-import org.sea9.android.woc.messaging.FcmService
+import org.sea9.android.woc.messaging.MessagingService
 import org.sea9.android.woc.ui.MessageDialog
 import java.text.SimpleDateFormat
 import java.util.*
@@ -358,7 +358,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 
 	override fun update(o: Observable?, arg: Any?) {
 		val result: Int = if (arg is Intent?) {
-			arg?.getIntExtra(FcmService.TAG, -2) ?: -3
+			arg?.getIntExtra(MessagingService.TAG, -2) ?: -3
 		} else {
 			-1
 		}
@@ -391,7 +391,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		}
 	}
 
-	class UpdateReceiver: BroadcastReceiver() {
+	class MessagingReceiver: BroadcastReceiver() {
 		override fun onReceive(context: Context?, intent: Intent?) {
 			BroadcastObserver.onUpdated(intent)
 		}

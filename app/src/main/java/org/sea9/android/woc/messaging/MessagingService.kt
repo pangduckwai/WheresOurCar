@@ -13,7 +13,7 @@ import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
 import java.lang.RuntimeException
 
-class FcmService: FirebaseMessagingService() {
+class MessagingService: FirebaseMessagingService() {
 	companion object {
 		const val TAG = "woc.fcm"
 	}
@@ -41,7 +41,7 @@ class FcmService: FirebaseMessagingService() {
 			if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
 				val helper = DbHelper(object : DbHelper.Caller {
 					override fun getContext(): Context? {
-						return this@FcmService
+						return this@MessagingService
 					}
 					override fun onReady() {
 						Log.d(TAG, "DB connection ready for app widget")
@@ -77,7 +77,7 @@ class FcmService: FirebaseMessagingService() {
 		MainAppWidget.update(this)
 
 		// Update main activity if the app is active
-		Intent(this, MainActivity.UpdateReceiver::class.java).also {
+		Intent(this, MainActivity.MessagingReceiver::class.java).also {
 			it.putExtra(TAG, result)
 			sendBroadcast(it)
 		}

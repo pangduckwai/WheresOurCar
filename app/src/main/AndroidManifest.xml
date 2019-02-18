@@ -39,9 +39,9 @@
 					android:resource="@xml/app_widget_info"/>
 		</receiver>
 
-		<receiver android:name=".MainActivity$UpdateReceiver" />
+		<receiver android:name=".MainActivity$MessagingReceiver" />
 
-		<service android:name=".messaging.FcmService" tools:ignore="ExportedService">
+		<service android:name=".messaging.MessagingService" tools:ignore="ExportedService">
 			<intent-filter>
 				<action android:name="com.google.firebase.MESSAGING_EVENT" />
 			</intent-filter>
