@@ -21,9 +21,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.retained_frag"
 		const val PATTERN_DATE = "yyyy-MM-dd HH:mm:ss"
-		private const val STATUS_NORMAL = 0
-		private const val STATUS_UPDATED = 1
-		private const val STATUS_ADDED = 2
+		const val STATUS_NORMAL = 0
+		const val STATUS_UPDATED = 1
+		const val STATUS_ADDED = 2
 		private const val KEY_MODE = "woc.mode"
 
 		fun getInstance(sfm: FragmentManager): MainContext {
@@ -33,6 +33,42 @@ class MainContext: Fragment(), DbHelper.Caller {
 				sfm.beginTransaction().add(instance, TAG).commit()
 			}
 			return instance
+		}
+
+		/**
+		 * @return
+		 * 00001  1 - Vehicle name empty
+		 * 00010  2 - Parking updated
+		 * 00100  4 - Parking already exists
+		 * 01000  8 - New vehicle added
+		 * 10000 16 - Vehicle updated
+		 */
+		fun saveVehicle(status: Int, record: VehicleRecord, helper: DbHelper): Int {
+			var result = 0
+			if (status <= 0) {
+				return 0 // No change
+			} else if (record.name.isBlank()) {
+				return 1 // Vehicle name cannot be empty
+			} else {
+				if (record.parking.isNotBlank()) {
+					result = try {
+						DbContract.Parking.insert(helper, record.parking)
+						(result or 2) //populateParkingList()
+					} catch (e: SQLException) {
+						Log.d(TAG, e.message) // this mean the parking already exists, so no problem here
+						(result or 4)
+					}
+				}
+
+				if ((status and STATUS_ADDED) > 0) { //is new record
+					if (DbContract.Vehicle.add(helper, record) != null)
+						result = (result or 8)
+				} else {
+					if (DbContract.Vehicle.update(helper, record) == 1)
+						result = (result or 16)
+				}
+			}
+			return result
 		}
 	}
 
@@ -111,45 +147,39 @@ class MainContext: Fragment(), DbHelper.Caller {
 		}
 	}
 	fun saveVehicle(): Boolean {
-		if (status == STATUS_NORMAL) {
-			callback?.doNotify("No change made")
-			return false
-		} else if (currentVehicle.name.isBlank()) {
-			callback?.doNotify("Vehicle name cannot be empty")
-			return false
-		} else {
-			if (currentVehicle.parking.isNotBlank()) {
-				try {
-					DbContract.Parking.insert(dbHelper!!, currentVehicle.parking)
-					populateParkingList()
-					callback?.doNotify("New parking ${currentVehicle.parking} added")
-				} catch (e: SQLException) {
-					Log.d(TAG, e.message) // this mean the parking already exists, so no problem here
-					callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+		if (dbHelper != null) {
+			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!)
+			when {
+				(result == 0) -> {
+					callback?.doNotify("No change made")
+					return false
+				}
+				((result and 1) > 0) -> {
+					callback?.doNotify("Vehicle name cannot be empty")
+					return false
+				}
+				else -> {
+					if ((result and 2) > 0) {
+						populateParkingList()
+						callback?.doNotify("New parking ${currentVehicle.parking} added")
+					} else if ((result and 4) > 0) {
+						callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+					}
+
+					return if ((result and 24) > 0) {
+						populateCurrent(null, true)
+						if ((result and 8) > 0) populateVehicleList()
+						resetStatus()
+						callback?.onUpdated()
+						true
+					} else {
+						false
+					}
 				}
 			}
-
-			if ((status and STATUS_ADDED) > 0) { //isNew
-				Log.d(TAG, "Saving new vehicle $currentVehicle ...")
-				val current = DbContract.Vehicle.add(dbHelper!!, currentVehicle)
-				populateCurrent(current)
-				return if (current != null) {
-					populateVehicleList()
-					resetStatus()
-					callback?.onUpdated()
-					true
-				} else
-					false
-			} else {
-				Log.d(TAG, "Updating existing vehicle $currentVehicle ...")
-				return if (DbContract.Vehicle.update(dbHelper!!, currentVehicle) == 1) {
-					populateCurrent(currentVehicle)
-					resetStatus()
-					callback?.onUpdated()
-					true
-				} else
-					false
-			}
+		} else {
+			Log.w(TAG, "Database not ready")
+			return false
 		}
 	}
 
@@ -164,7 +194,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		parkingAdaptor = ArrayAdapter(context, android.R.layout.simple_list_item_1)
 	}
 
-	private fun populateVehicleList() {
+	fun populateVehicleList() {
 		val v = DbContract.Vehicle.selectAll(dbHelper!!)
 		vehicleAdaptor.clear()
 		vehicleAdaptor.addAll(v.map {
@@ -172,7 +202,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		})
 	}
 
-	private fun populateParkingList() {
+	fun populateParkingList() {
 		val p = DbContract.Parking.select(dbHelper!!)
 		parkingAdaptor.clear()
 		parkingAdaptor.addAll(p.map {
@@ -182,7 +212,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 	fun populateCurrent(current: VehicleRecord?, retrieve: Boolean) {
 		if (current == null) {
-			if (retrieve) currentVehicle = DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord()
+			if (retrieve && (dbHelper != null))
+				currentVehicle = DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord()
 		} else {
 			currentVehicle = current
 		}
@@ -236,7 +267,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		}
 
 		operationMode = if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity) == ConnectionResult.SUCCESS) {
-			Log.w(TAG, "Google Play available")
+			Log.d(TAG, "Google Play available")
 			activity?.getPreferences(Context.MODE_PRIVATE)?.let {
 				when (it.getInt(KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
 					0 -> MODE.STANDALONE
@@ -246,7 +277,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 				}
 			} ?: MODE.STANDALONE // default
 		} else {
-			Log.w(TAG, "Google Play NOT available")
+			Log.i(TAG, "Google Play NOT available")
 			MODE.UNCONNECTED
 		}
 		Log.w(TAG, "Operation mode $operationMode")

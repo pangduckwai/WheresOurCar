@@ -32,9 +32,10 @@ class MainAppWidget: AppWidgetProvider() {
 		fun update(context: Context?) {
 			context?.let {
 				Log.d(TAG, "Updating app widget with explicit request...")
-				val intent = Intent(context, MainAppWidget::class.java)
-				intent.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-				context.sendBroadcast(intent)
+				Intent(context, MainAppWidget::class.java).also {
+					it.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+					context.sendBroadcast(it)
+				}
 			}
 		}
 	}

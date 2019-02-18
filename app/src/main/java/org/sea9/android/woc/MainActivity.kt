@@ -1,8 +1,10 @@
 package org.sea9.android.woc
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -12,11 +14,12 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
+import org.sea9.android.woc.messaging.FcmService
 import org.sea9.android.woc.ui.MessageDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Callback {
+class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.main"
 		const val EMPTY = ""
@@ -177,6 +180,8 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		super.onResume()
 		textVehicle.setAdapter(retainedContext.vehicleAdaptor)
 		textParking.setAdapter(retainedContext.parkingAdaptor)
+
+		BroadcastObserver.addObserver(this)
 	}
 
 	override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -338,5 +343,57 @@ class MainActivity : AppCompatActivity(), MainContext.Callback, MessageDialog.Ca
 		}
 		dialogShowing = false
 		dialog?.dismiss()
+	}
+	//=====================================================
+
+	/*=================================
+	 * Update activity when DB updated
+	 */
+	object BroadcastObserver: Observable() {
+		fun onUpdated(intent: Intent?) {
+			setChanged()
+			notifyObservers(intent)
+		}
+	}
+
+	override fun update(o: Observable?, arg: Any?) {
+		val result: Int = if (arg is Intent?) {
+			arg?.getIntExtra(FcmService.TAG, -2) ?: -3
+		} else {
+			-1
+		}
+
+		when {
+			(result < 0) -> {
+				doNotify("Error occurred: $result")
+			}
+			(result == 0) -> {
+				doNotify("Message received from publisher, no change made")
+			}
+			((result and 1) > 0) -> {
+				doNotify("Publisher attempted to update with empty vehicle name")
+			}
+			else -> {
+				if ((result and 2) > 0) {
+					retainedContext.populateParkingList()
+					doNotify("Publisher added new parking")
+				}
+
+				if ((result and 24) > 0) {
+					retainedContext.populateCurrent(null, true)
+					if ((result and 8) > 0) {
+						doNotify("Publisher added new vehicle")
+						retainedContext.populateVehicleList()
+					}
+					retainedContext.resetStatus()
+				}
+			}
+		}
+	}
+
+	class UpdateReceiver: BroadcastReceiver() {
+		override fun onReceive(context: Context?, intent: Intent?) {
+			BroadcastObserver.onUpdated(intent)
+		}
 	}
 }

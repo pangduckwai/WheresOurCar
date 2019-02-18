@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="org.sea9.android.woc">
+		  xmlns:tools="http://schemas.android.com/tools" package="org.sea9.android.woc">
 
 	<application
 			android:allowBackup="false"
@@ -39,17 +39,12 @@
 					android:resource="@xml/app_widget_info"/>
 		</receiver>
 
-		<service android:name=".messaging.FcmService">
+		<receiver android:name=".MainActivity$UpdateReceiver" />
+
+		<service android:name=".messaging.FcmService" tools:ignore="ExportedService">
 			<intent-filter>
 				<action android:name="com.google.firebase.MESSAGING_EVENT" />
 			</intent-filter>
 		</service>
-
-		<!--<meta-data-->
-				<!--android:name="firebase_messaging_auto_init_enabled"-->
-				<!--android:value="false" />-->
-		<!--<meta-data-->
-				<!--android:name="firebase_analytics_collection_enabled"-->
-				<!--android:value="false" />-->
 	</application>
 </manifest>
