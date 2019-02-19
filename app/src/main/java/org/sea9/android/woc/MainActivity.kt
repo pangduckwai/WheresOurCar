@@ -248,7 +248,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			MessageDialog.getInstance(ref, msg, null).show(supportFragmentManager, MessageDialog.TAG)
 		} else {
 			val obj = Toast.makeText(this, msg, Toast.LENGTH_LONG )
-			obj.setGravity(Gravity.CENTER, 0, 0)
+			obj.setGravity(Gravity.TOP, 0, 0)
 			obj.show()
 		}
 	}

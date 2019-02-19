@@ -1,5 +1,5 @@
 <resources>
-	<string name="app_name">Where\'s Our Cars 2</string>
+	<string name="app_name">Where\'s Our Cars2</string>
 	<string name="app_version">Version %s</string>
 	<string name="app_copyright" translatable="false">\u00A9 Copyright 2019 SEA9.ORG</string>
 	<string name="app_license">
