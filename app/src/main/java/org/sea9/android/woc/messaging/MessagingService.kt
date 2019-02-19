@@ -24,7 +24,19 @@ class MessagingService: FirebaseMessagingService() {
 	 * is initially generated so this is where you would retrieve the token.
 	 */
 	override fun onNewToken(token: String?) {
-		Log.i(TAG, "Refreshed token: $token")
+		// Save the refreshed token
+		getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+			with(it.edit()) {
+				putString(MainActivity.KEY_TOKEN, token)
+				apply()
+			}
+		}
+
+		// Need to update main activity only if the app is active
+		Intent(this, MainActivity.MessagingReceiver::class.java).also {
+			it.putExtra(MainActivity.KEY_TOKEN, token)
+			sendBroadcast(it)
+		}
 	}
 
 	override fun onMessageReceived(remoteMessage: RemoteMessage?) {
@@ -78,7 +90,7 @@ class MessagingService: FirebaseMessagingService() {
 
 		// Update main activity if the app is active
 		Intent(this, MainActivity.MessagingReceiver::class.java).also {
-			it.putExtra(TAG, result)
+			it.putExtra(MainActivity.KEY_PUB, result)
 			sendBroadcast(it)
 		}
 	}

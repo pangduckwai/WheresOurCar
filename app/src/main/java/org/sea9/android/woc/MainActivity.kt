@@ -14,7 +14,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
-import org.sea9.android.woc.messaging.MessagingService
 import org.sea9.android.woc.ui.AboutDialog
 import org.sea9.android.woc.ui.MessageDialog
 import org.sea9.android.woc.ui.SettingsDialog
@@ -28,6 +27,9 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		const val MSG_DIALOG_NOTIFY  = 90001
 		const val MSG_DIALOG_NEW_VEHICLE = 90002
 		const val MSG_DIALOG_PENDING_UPDATE = 90003
+		const val KEY_MODE = "woc.mode"
+		const val KEY_TOKEN = "woc.token"
+		const val KEY_PUB = "woc.publication"
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -368,8 +370,8 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	}
 	//=====================================================
 
-	/*=================================
-	 * Update activity when DB updated
+	/*========================================
+	 * Process broadcast from the FCM service
 	 */
 	object BroadcastObserver: Observable() {
 		fun onUpdated(intent: Intent?) {
@@ -379,36 +381,37 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	}
 
 	override fun update(o: Observable?, arg: Any?) {
-		val result: Int = if (arg is Intent?) {
-			arg?.getIntExtra(MessagingService.TAG, -2) ?: -3
-		} else {
-			-1
-		}
-
-		when {
-			(result < 0) -> {
-				doNotify("Error occurred: $result")
-			}
-			(result == 0) -> {
-				doNotify("Message received from publisher, no change made")
-			}
-			((result and 1) > 0) -> {
-				doNotify("Publisher attempted to update with empty vehicle name")
-			}
-			else -> {
-				if ((result and 2) > 0) {
-					retainedContext.populateParkingList()
-					doNotify("Publisher added new parking")
-				}
-
-				if ((result and 24) > 0) {
-					retainedContext.populateCurrent(null, true)
-					if ((result and 8) > 0) {
-						doNotify("Publisher added new vehicle")
-						retainedContext.populateVehicleList()
+		(if (arg is Intent?) (arg as Intent) else null)?.let {
+			if (it.hasExtra(KEY_PUB)) {
+				val result = it.getIntExtra(KEY_PUB, -1)
+				when {
+					(result < 0) -> {
+						doNotify("Error occurred: $result")
 					}
-					retainedContext.resetStatus()
+					(result == 0) -> {
+						doNotify("Message received from publisher, no change made")
+					}
+					((result and 1) > 0) -> {
+						doNotify("Publisher attempted to update with empty vehicle name")
+					}
+					else -> {
+						if ((result and 2) > 0) {
+							retainedContext.populateParkingList()
+							doNotify("Publisher added new parking")
+						}
+
+						if ((result and 24) > 0) {
+							retainedContext.populateCurrent(null, true)
+							if ((result and 8) > 0) {
+								doNotify("Publisher added new vehicle")
+								retainedContext.populateVehicleList()
+							}
+							retainedContext.resetStatus()
+						}
+					}
 				}
+			} else if (it.hasExtra(KEY_TOKEN)) {
+				retainedContext.notifyPublisher(it.getStringExtra(KEY_TOKEN))
 			}
 		}
 	}

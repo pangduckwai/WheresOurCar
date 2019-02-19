@@ -10,8 +10,6 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
@@ -24,7 +22,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 		const val STATUS_NORMAL = 0
 		const val STATUS_UPDATED = 1
 		const val STATUS_ADDED = 2
-		private const val KEY_MODE = "woc.mode"
 
 		fun getInstance(sfm: FragmentManager): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -235,21 +232,24 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 	private lateinit var operationMode: MODE
 
-	private var messagingToken: String? = null
+//	private var messagingToken: String? = null
+//	private fun retrieveFirebaseToken() {
+//		FirebaseInstanceId.getInstance().instanceId
+//			.addOnCompleteListener(OnCompleteListener { task ->
+//				if (!task.isSuccessful) {
+//					Log.w(TAG, "getInstanceId failed", task.exception)
+//					return@OnCompleteListener
+//				}
+//
+//				// Get new Instance ID token
+//				messagingToken = task.result?.token
+//
+//				Log.w(TAG, "FCM Token: $messagingToken")
+//			})
+//	}
 
-	private fun retrieveFirebaseToken() {
-		FirebaseInstanceId.getInstance().instanceId
-			.addOnCompleteListener(OnCompleteListener { task ->
-				if (!task.isSuccessful) {
-					Log.w(TAG, "getInstanceId failed", task.exception)
-					return@OnCompleteListener
-				}
-
-				// Get new Instance ID token
-				messagingToken = task.result?.token
-
-				Log.w(TAG, "FCM Token: $messagingToken")
-			})
+	fun notifyPublisher(token: String) {
+		Log.w(TAG, "Notifying publisher of the FCM token $token")
 	}
 
 	/*=========================
@@ -309,8 +309,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 		operationMode = if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity) == ConnectionResult.SUCCESS) {
 			Log.d(TAG, "Google Play available")
-			activity?.getPreferences(Context.MODE_PRIVATE)?.let {
-				when (it.getInt(KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
+			activity?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+				when (it.getInt(MainActivity.KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
 					0 -> MODE.STANDALONE
 					1 -> MODE.SUBSCRIBER
 					2 -> MODE.PUBLISHER
@@ -324,7 +324,10 @@ class MainContext: Fragment(), DbHelper.Caller {
 		Log.w(TAG, "Operation mode $operationMode")
 
 		if ((operationMode == MODE.PUBLISHER) || (operationMode == MODE.SUBSCRIBER)) {
-			retrieveFirebaseToken()
+			val savedToken = activity
+				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+				?.getString(MainActivity.KEY_TOKEN, null)
+			Log.w(TAG, "Saved Token: $savedToken")
 		}
 	}
 
