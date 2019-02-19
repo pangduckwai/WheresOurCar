@@ -353,6 +353,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	override fun onUpdated() {
 		Log.d(TAG, "Updating app widget")
 		MainAppWidget.update(this)
+		if (retainedContext.isPublisher()) retainedContext.publish()
 	}
 	//================================================
 

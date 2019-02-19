@@ -188,7 +188,7 @@ object DbContract {
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
 					put(COL_CURR, 1)
-					put(COMMON_MODF, Date().time)
+					put(COMMON_MODF, record.modified ?: Date().time)
 				}
 				return helper.writableDatabase.update(TABLE, newRow, COMMON_PKEY, args)
 			}
@@ -230,7 +230,7 @@ object DbContract {
 					put(COL_FLOOR, record.floor)
 					put(COL_LOT, record.lot)
 					put(COL_CURR, 1)
-					put(COMMON_MODF, now)
+					put(COMMON_MODF, record.modified ?: now)
 				}
 
 				var result: VehicleRecord? = null
@@ -241,7 +241,7 @@ object DbContract {
 						val ret = db.insertOrThrow(TABLE, null, newRow1)
 						if (ret >= 0) {
 							db.setTransactionSuccessful()
-							result = VehicleRecord(ret, record.name, record.parking, record.floor, record.lot, true, now)
+							result = VehicleRecord(ret, record.name, record.parking, record.floor, record.lot, true, record.modified ?: now)
 						}
 					}
 				} finally {

@@ -52,6 +52,7 @@ class MessagingService: FirebaseMessagingService() {
 					val prk = remoteMessage.data[VehicleRecord.PRK]
 					val flr = remoteMessage.data[VehicleRecord.FLR]
 					val lot = remoteMessage.data[VehicleRecord.LOT]
+					val mod = remoteMessage.data[VehicleRecord.MOD]
 
 					// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
 					// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
@@ -71,15 +72,16 @@ class MessagingService: FirebaseMessagingService() {
 						val record = when(list.size) {
 							0 -> {
 								status = MainContext.STATUS_ADDED or MainContext.STATUS_UPDATED
-								VehicleRecord(-1, veh, prk, flr, lot, true, null)
+								VehicleRecord(-1, veh, prk, flr, lot, true, mod?.toLongOrNull())
 							}
 							1 -> {
 								status = MainContext.STATUS_UPDATED
-								VehicleRecord(list[0].rid, veh, prk, flr, lot, true, null)
+								VehicleRecord(list[0].rid, veh, prk, flr, lot, true, mod?.toLongOrNull())
 							}
 							else -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
 						}
-						onUpdate(MainContext.saveVehicle(status, record, helper))
+						// Keep the modified timestamp here because should use the modified timestamp from the publisher
+						onUpdate(MainContext.saveVehicle(status, record, helper, false))
 					} else {
 						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
 					}

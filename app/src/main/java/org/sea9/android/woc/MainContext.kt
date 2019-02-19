@@ -10,10 +10,13 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import org.json.JSONObject
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
 import java.lang.RuntimeException
+import java.util.*
 
 class MainContext: Fragment(), DbHelper.Caller {
 	companion object {
@@ -35,7 +38,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		fun getOperationMode(context: Context?): MODE {
 			return if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
 				context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
-					when (it.getInt(MainActivity.KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
+					when (it.getInt(MainActivity.KEY_MODE, 2)) { //TODO Testing only! Default value should be "STANDALONE"
 						0 -> MODE.STANDALONE
 						1 -> MODE.SUBSCRIBER
 						2 -> MODE.PUBLISHER
@@ -48,6 +51,17 @@ class MainContext: Fragment(), DbHelper.Caller {
 			}
 		}
 
+		fun getPlayAccessToken(context: Context?): String? {
+			return GoogleCredential.fromStream(
+				context?.assets?.open("wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json")
+			).createScoped(
+				listOf("https://www.googleapis.com/auth/firebase.messaging")
+			)?.let {
+				it.refreshToken()
+				it.accessToken
+			}
+		}
+
 		/**
 		 * @return
 		 * 00001  1 - Vehicle name empty
@@ -56,7 +70,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		 * 01000  8 - New vehicle added
 		 * 10000 16 - Vehicle updated
 		 */
-		fun saveVehicle(status: Int, record: VehicleRecord, helper: DbHelper): Int {
+		fun saveVehicle(status: Int, record: VehicleRecord, helper: DbHelper, ignoreTimestamp: Boolean): Int {
 			var result = 0
 			if (status <= 0) {
 				return 0 // No change
@@ -72,6 +86,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 						(result or 4)
 					}
 				}
+
+				if (ignoreTimestamp) record.modified = null
 
 				if ((status and STATUS_ADDED) > 0) { //is new record
 					if (DbContract.Vehicle.add(helper, record) != null)
@@ -164,7 +180,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 	fun saveVehicle(): Boolean {
 		if (dbHelper != null) {
-			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!)
+			// Ignore timestamp here because any changes made from the UI should have the modified timestamp updated
+			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!, true)
 			when {
 				(result == 0) -> {
 					callback?.doNotify("No change made")
@@ -250,6 +267,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	fun isSubscriber(): Boolean {
 		return (operationMode == MODE.SUBSCRIBER)
 	}
+	fun isPublisher(): Boolean {
+		return (operationMode == MODE.PUBLISHER)
+	}
 
 //	private var messagingToken: String? = null
 //	private fun retrieveFirebaseToken() {
@@ -269,6 +289,32 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 	fun notifyPublisher(token: String) {
 		Log.w(TAG, "Notifying publisher of the FCM token $token")
+	}
+
+	/*
+{
+  "message":{
+    "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "data":{
+      "Nick" : "Mario",
+      "body" : "great match!",
+      "Room" : "PortugalVSDenmark"
+    }
+  }
+}
+	 */
+	fun publish() {
+		val data = JSONObject()
+		data.put(VehicleRecord.NAM, currentVehicle.name)
+		data.put(VehicleRecord.PRK, currentVehicle.parking)
+		data.put(VehicleRecord.FLR, currentVehicle.floor?: VehicleRecord.EMPTY)
+		data.put(VehicleRecord.LOT, currentVehicle.lot?: VehicleRecord.EMPTY)
+		data.put(VehicleRecord.MOD, currentVehicle.modified?: Date().time)
+		val message = JSONObject()
+		message.put("data", data)
+		message.put("token", "")
+
+		Log.w(TAG, "Building message $message")
 	}
 
 	/*=========================
