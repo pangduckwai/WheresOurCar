@@ -40,47 +40,54 @@ class MessagingService: FirebaseMessagingService() {
 	}
 
 	override fun onMessageReceived(remoteMessage: RemoteMessage?) {
-		Log.d(TAG, "From: ${remoteMessage?.from}")
-		remoteMessage?.data?.isNotEmpty()?.let {
-			val veh = remoteMessage.data[VehicleRecord.NAM]
-			val prk = remoteMessage.data[VehicleRecord.PRK]
-			val flr = remoteMessage.data[VehicleRecord.FLR]
-			val lot = remoteMessage.data[VehicleRecord.LOT]
-
-			// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
-			// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
-			// in those cases. Therefore check for null for all the 4 fields.
-			if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
-				val helper = DbHelper(object : DbHelper.Caller {
-					override fun getContext(): Context? {
-						return this@MessagingService
-					}
-					override fun onReady() {
-						Log.d(TAG, "DB connection ready for app widget")
-					}
-				})
-
-				val list = DbContract.Vehicle.select(helper, veh)
-				val status: Int
-				val record = when(list.size) {
-					0 -> {
-						status = MainContext.STATUS_ADDED or MainContext.STATUS_UPDATED
-						VehicleRecord(-1, veh, prk, flr, lot, true, null)
-					}
-					1 -> {
-						status = MainContext.STATUS_UPDATED
-						VehicleRecord(list[0].rid, veh, prk, flr, lot, true, null)
-					}
-					else -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
+		when(MainContext.getOperationMode(this)) {
+			MainContext.MODE.SUBSCRIBER -> {
+				remoteMessage?.notification?.let {
+					Log.w(TAG, "Invalid message with notification body received: ${it.body}")
+					return
 				}
-				onUpdate(MainContext.saveVehicle(status, record, helper))
-			} else {
-				Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
-			}
-		}
 
-		remoteMessage?.notification?.let {
-			Log.w(TAG, "Message Notification Body: ${it.body}")
+				remoteMessage?.data?.isNotEmpty()?.let {
+					val veh = remoteMessage.data[VehicleRecord.NAM]
+					val prk = remoteMessage.data[VehicleRecord.PRK]
+					val flr = remoteMessage.data[VehicleRecord.FLR]
+					val lot = remoteMessage.data[VehicleRecord.LOT]
+
+					// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
+					// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
+					// in those cases. Therefore check for null for all the 4 fields.
+					if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
+						val helper = DbHelper(object : DbHelper.Caller {
+							override fun getContext(): Context? {
+								return this@MessagingService
+							}
+							override fun onReady() {
+								Log.d(TAG, "DB connection ready for app widget")
+							}
+						})
+
+						val list = DbContract.Vehicle.select(helper, veh)
+						val status: Int
+						val record = when(list.size) {
+							0 -> {
+								status = MainContext.STATUS_ADDED or MainContext.STATUS_UPDATED
+								VehicleRecord(-1, veh, prk, flr, lot, true, null)
+							}
+							1 -> {
+								status = MainContext.STATUS_UPDATED
+								VehicleRecord(list[0].rid, veh, prk, flr, lot, true, null)
+							}
+							else -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
+						}
+						onUpdate(MainContext.saveVehicle(status, record, helper))
+					} else {
+						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
+					}
+				}
+			}
+			else -> {
+				Log.w(TAG, "Ignoring messages from ${remoteMessage?.from}")
+			}
 		}
 	}
 

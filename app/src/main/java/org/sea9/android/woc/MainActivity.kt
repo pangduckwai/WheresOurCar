@@ -7,6 +7,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.InputFilter
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
@@ -187,8 +188,28 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 
 	override fun onResume() {
 		super.onResume()
-		textVehicle.setAdapter(retainedContext.vehicleAdaptor)
-		textParking.setAdapter(retainedContext.parkingAdaptor)
+
+		if (retainedContext.isSubscriber()) {
+			fab.isEnabled = false
+			buttonVehicle.isEnabled = false
+			buttonParking.isEnabled = false
+			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textParking.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textVehicle.setAdapter(null)
+			textParking.setAdapter(null)
+		} else {
+			fab.isEnabled = true
+			buttonVehicle.isEnabled = true
+			buttonParking.isEnabled = true
+			textFloor.filters = arrayOf()
+			textLot.filters = arrayOf()
+			textVehicle.filters = arrayOf()
+			textParking.filters = arrayOf()
+			textVehicle.setAdapter(retainedContext.vehicleAdaptor)
+			textParking.setAdapter(retainedContext.parkingAdaptor)
+		}
 
 		BroadcastObserver.addObserver(this)
 	}
@@ -271,6 +292,13 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			clearKeyboard(view)
 		}
 
+		if (retainedContext.isSubscriber()) {
+			textFloor.filters = arrayOf()
+			textLot.filters = arrayOf()
+			textVehicle.filters = arrayOf()
+			textParking.filters = arrayOf()
+		}
+
 		val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
 		textVehicle.setText(data?.name)
 		textParking.setText(data?.parking)
@@ -282,6 +310,13 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			else
 				Date())
 		)
+
+		if (retainedContext.isSubscriber()) {
+			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textParking.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+		}
 	}
 
 	override fun onNewVehicle(vehicle: String) {

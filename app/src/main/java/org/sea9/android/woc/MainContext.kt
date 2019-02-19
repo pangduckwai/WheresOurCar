@@ -32,6 +32,22 @@ class MainContext: Fragment(), DbHelper.Caller {
 			return instance
 		}
 
+		fun getOperationMode(context: Context?): MODE {
+			return if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
+				context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
+					when (it.getInt(MainActivity.KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
+						0 -> MODE.STANDALONE
+						1 -> MODE.SUBSCRIBER
+						2 -> MODE.PUBLISHER
+						else -> null
+					}
+				} ?: MODE.STANDALONE // default
+			} else {
+				Log.i(TAG, "Google Play NOT available")
+				MODE.UNCONNECTED
+			}
+		}
+
 		/**
 		 * @return
 		 * 00001  1 - Vehicle name empty
@@ -231,6 +247,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 
 	private lateinit var operationMode: MODE
+	fun isSubscriber(): Boolean {
+		return (operationMode == MODE.SUBSCRIBER)
+	}
 
 //	private var messagingToken: String? = null
 //	private fun retrieveFirebaseToken() {
@@ -293,6 +312,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
+
+		operationMode = getOperationMode(activity)
+		Log.w(TAG, "Operation mode $operationMode")
 	}
 
 	override fun onResume() {
@@ -306,29 +328,12 @@ class MainContext: Fragment(), DbHelper.Caller {
 			populateParkingList()
 			populateCurrent(null, true)
 		}
-
-		operationMode = if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity) == ConnectionResult.SUCCESS) {
-			Log.d(TAG, "Google Play available")
-			activity?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
-				when (it.getInt(MainActivity.KEY_MODE, 1)) { //TODO Testing only! Default value should be "STANDALONE"
-					0 -> MODE.STANDALONE
-					1 -> MODE.SUBSCRIBER
-					2 -> MODE.PUBLISHER
-					else -> null
-				}
-			} ?: MODE.STANDALONE // default
-		} else {
-			Log.i(TAG, "Google Play NOT available")
-			MODE.UNCONNECTED
-		}
-		Log.w(TAG, "Operation mode $operationMode")
-
-		if ((operationMode == MODE.PUBLISHER) || (operationMode == MODE.SUBSCRIBER)) {
-			val savedToken = activity
-				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-				?.getString(MainActivity.KEY_TOKEN, null)
-			Log.w(TAG, "Saved Token: $savedToken")
-		}
+//		if ((operationMode == MODE.PUBLISHER) || (operationMode == MODE.SUBSCRIBER)) {
+//			val savedToken = activity
+//				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+//				?.getString(MainActivity.KEY_TOKEN, null)
+//			Log.w(TAG, "Saved Token: $savedToken")
+//		}
 	}
 
 	override fun onDestroy() {
