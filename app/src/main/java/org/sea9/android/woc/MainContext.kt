@@ -72,17 +72,20 @@ class MainContext: Fragment(), DbHelper.Caller {
 		}
 	}
 
-	private var dbHelper: DbHelper? = null
-	private fun setDbHelper(helper: DbHelper) {
-		dbHelper = helper
-	}
-	private fun isDbReady(): Boolean {
-		return ((dbHelper != null) && dbHelper!!.ready)
-	}
-
+	/*======================
+	 * Main UI interactions
+	 */
 	private var status = STATUS_NORMAL
 	fun isUpdated(): Boolean {
 		return (status > 0)
+	}
+	fun setUpdated() {
+		status = status or STATUS_UPDATED
+		callback?.onStatusChanged()
+	}
+	private fun setAdded() {
+		status = status or STATUS_ADDED
+		callback?.onStatusChanged()
 	}
 	fun resetStatus() {
 		status = STATUS_NORMAL
@@ -93,7 +96,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		if (parking != currentVehicle.parking) {
 			Log.d(TAG, "updateParking $parking...")
 			currentVehicle.parking = parking
-			status = status or STATUS_UPDATED
+			setUpdated()
 			populateCurrent(null)
 		}
 	}
@@ -102,7 +105,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 			(floor.isBlank() && (currentVehicle.floor?.isNotBlank() == true))) {
 			Log.d(TAG, "updateFloor $floor...")
 			currentVehicle.floor = floor
-			status = status or STATUS_UPDATED
+			setUpdated()
 			populateCurrent(null)
 		}
 	}
@@ -111,7 +114,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 			(lot.isBlank() && (currentVehicle.lot?.isNotBlank() == true))) {
 			Log.d(TAG, "updateLot $lot...")
 			currentVehicle.lot = lot
-			status = status or STATUS_UPDATED
+			setUpdated()
 			populateCurrent(null)
 		}
 	}
@@ -143,7 +146,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 			val current = VehicleRecord()
 			current.name = vehicle
 			populateCurrent(current)
-			status = STATUS_ADDED //set the is_new flag
+			setAdded() //set the is_new flag
 		}
 	}
 	fun saveVehicle(): Boolean {
@@ -217,7 +220,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		} else {
 			currentVehicle = current
 		}
-		callback?.onPopulated(currentVehicle, ((status and STATUS_UPDATED) == 0)) //true if not updated
+		callback?.onPopulated(currentVehicle, !isUpdated()) //true if not updated -> clear focus
 	}
 	fun populateCurrent(current: VehicleRecord?) {
 		populateCurrent(current, false)
@@ -226,6 +229,10 @@ class MainContext: Fragment(), DbHelper.Caller {
 	/*==========================
 	 * Firebase Cloud Messaging
 	 */
+	enum class MODE {
+		STANDALONE, PUBLISHER, SUBSCRIBER, UNCONNECTED
+	}
+
 	private lateinit var operationMode: MODE
 
 	private var messagingToken: String? = null
@@ -243,6 +250,40 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 				Log.w(TAG, "FCM Token: $messagingToken")
 			})
+	}
+
+	/*=========================
+	 * SQLite database related
+	 */
+	private var dbHelper: DbHelper? = null
+	private fun setDbHelper(helper: DbHelper) {
+		dbHelper = helper
+	}
+	private fun isDbReady(): Boolean {
+		return ((dbHelper != null) && dbHelper!!.ready)
+	}
+
+	//@see org.sea9.android.woc.data.DbHelper.Caller
+	override fun onReady() {
+		Log.d(TAG, "db ready")
+		activity?.runOnUiThread {
+			populateVehicleList()
+			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
+		}
+	}
+
+	//Init DB asynchronously
+	private fun initDb() {
+		Log.d(TAG, "init db")
+		AsyncDbInitTask(this).execute()
+	}
+	class AsyncDbInitTask (private val caller: MainContext): AsyncTask<Void, Void, Void>() {
+		override fun doInBackground(vararg params: Void?): Void? {
+			val helper = DbHelper(caller)
+			caller.setDbHelper(helper)
+			caller.populateParkingList() //Call this instead of SQL_CONFIG since this app does not need foreign key
+			return null
+		}
 	}
 
 	/*=====================================================
@@ -303,6 +344,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		fun onPopulated(data: VehicleRecord?, clearFocus: Boolean)
 		fun onNewVehicle(vehicle: String)
 		fun onSwitchVehicle(vehicle: String)
+		fun onStatusChanged()
 		fun onUpdated()
 		fun doNotify(msg: String)
 		fun doNotify(msg: String, stay: Boolean)
@@ -322,38 +364,5 @@ class MainContext: Fragment(), DbHelper.Caller {
 	override fun onDetach() {
 		super.onDetach()
 		callback = null
-	}
-	//========================================
-
-	/*================================================
-	 * @see org.sea9.android.woc.data.DbHelper.Caller
-	 */
-	override fun onReady() {
-		Log.d(TAG, "db ready")
-		activity?.runOnUiThread {
-			populateVehicleList()
-			populateCurrent(DbContract.Vehicle.select(dbHelper!!) ?: VehicleRecord())
-		}
-	}
-
-	/*========================
-	 * Init DB asynchronously
-	 */
-	private fun initDb() {
-		Log.d(TAG, "init db")
-		AsyncDbInitTask(this).execute()
-	}
-	class AsyncDbInitTask (private val caller: MainContext): AsyncTask<Void, Void, Void>() {
-		override fun doInBackground(vararg params: Void?): Void? {
-			val helper = DbHelper(caller)
-			caller.setDbHelper(helper)
-			caller.populateParkingList() //Call this instead of SQL_CONFIG since this app does not need foreign key
-			return null
-		}
-	}
-
-	//========================
-	enum class MODE {
-		STANDALONE, PUBLISHER, SUBSCRIBER, UNCONNECTED
 	}
 }

@@ -173,6 +173,11 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 				doNotify(getString(R.string.msg_discarding))
 				retainedContext.populateCurrent(null, true)
 				retainedContext.resetStatus()
+			} else {
+				val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
+				doNotify(getString(R.string.msg_touch))
+				textUpdate.text = formatter.format(Date())
+				retainedContext.setUpdated()
 			}
 			clearKeyboard(currentFocus ?: it)
 		}
@@ -297,6 +302,14 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 					getString(R.string.button_no))
 				.show(supportFragmentManager, MessageDialog.TAG)
 			dialogShowing = true
+		}
+	}
+
+	override fun onStatusChanged() {
+		if (retainedContext.isUpdated()) {
+			fab.setImageDrawable(getDrawable(R.drawable.icon_undo))
+		} else {
+			fab.setImageDrawable(getDrawable(R.drawable.icon_touch))
 		}
 	}
 
