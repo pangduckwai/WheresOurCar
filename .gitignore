@@ -32,6 +32,9 @@ proguard/
 # Android Studio captures folder
 captures/
 
+# Assets
+assets/
+
 # IntelliJ
 *.iml
 .idea
