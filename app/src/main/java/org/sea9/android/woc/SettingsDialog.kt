@@ -1,9 +1,8 @@
-package org.sea9.android.woc.ui
+package org.sea9.android.woc
 
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.view.*
-import org.sea9.android.woc.R
 
 class SettingsDialog : DialogFragment() {
 	companion object {

@@ -1,4 +1,4 @@
-package org.sea9.android.woc.ui
+package org.sea9.android.ui
 
 import android.content.Context
 import android.os.Bundle
@@ -9,7 +9,7 @@ import org.sea9.android.woc.R
 
 class AboutDialog : DialogFragment() {
 	companion object {
-		const val TAG = "woc.about"
+		const val TAG = "sea9.about"
 
 		fun getInstance() : AboutDialog {
 			val instance = AboutDialog()

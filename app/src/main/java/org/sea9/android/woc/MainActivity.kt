@@ -15,9 +15,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
-import org.sea9.android.woc.ui.AboutDialog
-import org.sea9.android.woc.ui.MessageDialog
-import org.sea9.android.woc.ui.SettingsDialog
+import org.sea9.android.ui.AboutDialog
+import org.sea9.android.ui.MessageDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -358,7 +357,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	//================================================
 
 	/*=====================================================
-	 * @see org.sea9.android.woc.ui.MessageDialog.Callback
+	 * @see org.sea9.android.ui.MessageDialog.Callback
 	 */
 	private var dialogShowing = false
 	override fun neutral(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {

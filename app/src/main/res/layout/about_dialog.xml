@@ -19,7 +19,7 @@
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:contentDescription="@string/app_name"
-			android:src="@drawable/logo_car" />
+			android:src="@drawable/app_logo" />
 
 		<TextView
 			android:textAppearance="?android:attr/textAppearanceLarge"
@@ -60,7 +60,7 @@
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:contentDescription="@string/app_author"
-			android:src="@drawable/paul" />
+			android:src="@drawable/author" />
 
 		<TextView
 			android:id="@+id/author"

@@ -1,4 +1,4 @@
-package org.sea9.android.woc.ui
+package org.sea9.android.ui
 
 import android.app.AlertDialog
 import android.app.Dialog
@@ -11,13 +11,13 @@ import org.sea9.android.woc.R
 
 class MessageDialog : DialogFragment() {
 	companion object {
-		const val TAG = "woc.message_dialog"
-		const val REF = "woc.reference"
-		const val FLG = "woc.flags"
-		const val MSG = "woc.message"
-		const val NEU = "woc.neutral"
-		const val POS = "woc.positive"
-		const val NEG = "woc.negative"
+		const val TAG = "sea9.message_dialog"
+		const val REF = "sea9.reference"
+		const val FLG = "sea9.flags"
+		const val MSG = "sea9.message"
+		const val NEU = "sea9.neutral"
+		const val POS = "sea9.positive"
+		const val NEG = "sea9woc.negative"
 
 		fun getInstance(reference: Int, bundle: Bundle?, buttons: Int, title: String?, message: String, neutral: String?, positive: String?, negative: String?) : MessageDialog {
 			val instance = MessageDialog()
