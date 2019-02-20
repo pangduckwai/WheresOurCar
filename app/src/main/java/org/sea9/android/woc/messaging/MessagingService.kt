@@ -6,7 +6,7 @@ import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import org.sea9.android.woc.MainActivity
-import org.sea9.android.woc.MainAppWidget
+import org.sea9.android.woc.MainWidget
 import org.sea9.android.woc.MainContext
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
@@ -95,7 +95,7 @@ class MessagingService: FirebaseMessagingService() {
 
 	private fun onUpdate(result: Int = -1) {
 		// Update app widget
-		MainAppWidget.update(this)
+		MainWidget.update(this)
 
 		// Update main activity if the app is active
 		Intent(this, MainActivity.MessagingReceiver::class.java).also {

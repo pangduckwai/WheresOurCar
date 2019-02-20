@@ -173,12 +173,12 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			retainedContext.updateLot(textLot.text.toString())
 			retainedContext.updateParking(textParking.text.toString())
 			if (retainedContext.isUpdated()) {
-				doNotify(getString(R.string.msg_discarding))
+				doNotify(getString(R.string.msg_ui_discarding))
 				retainedContext.populateCurrent(null, true)
 				retainedContext.resetStatus()
 			} else {
 				val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
-				doNotify(getString(R.string.msg_touch))
+				doNotify(getString(R.string.msg_ui_touch))
 				textUpdate.text = formatter.format(Date())
 				retainedContext.setUpdated()
 			}
@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		retainedContext.updateLot(textLot.text.toString())
 		retainedContext.updateParking(textParking.text.toString())
 		if (retainedContext.saveVehicle()) {
-			doNotify(getString(R.string.msg_updated))
+			doNotify(getString(R.string.msg_ui_updated))
 		}
 	}
 
@@ -265,15 +265,15 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	/*======================================================
 	 * Common implementation of several Callback interfaces
 	 */
-	override fun doNotify(msg: String) {
+	override fun doNotify(msg: String?) {
 		doNotify(msg, false)
 	}
-	override fun doNotify(msg: String, stay: Boolean) {
+	override fun doNotify(msg: String?, stay: Boolean) {
 		doNotify(MSG_DIALOG_NOTIFY, msg, stay)
 	}
-	override fun doNotify(ref: Int, msg: String, stay: Boolean) {
-		if (stay || (msg.length > 70)) {
-			MessageDialog.getInstance(ref, msg, null).show(supportFragmentManager, MessageDialog.TAG)
+	override fun doNotify(ref: Int, msg: String?, stay: Boolean) {
+		if (stay || ((msg != null) && (msg.length > 70))) {
+			MessageDialog.getInstance(ref, msg ?: EMPTY, null).show(supportFragmentManager, MessageDialog.TAG)
 		} else {
 			val obj = Toast.makeText(this, msg, Toast.LENGTH_LONG )
 			obj.setGravity(Gravity.TOP, 0, 0)
@@ -323,7 +323,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		if (!dialogShowing) {
 			val bundle = Bundle()
 			bundle.putString(MainContext.TAG, vehicle)
-			MessageDialog.getOkayCancelDialog(MSG_DIALOG_NEW_VEHICLE, getString(R.string.msg_add_new, vehicle), bundle)
+			MessageDialog.getOkayCancelDialog(MSG_DIALOG_NEW_VEHICLE, getString(R.string.msg_ui_add_new, vehicle), bundle)
 				.show(supportFragmentManager, MessageDialog.TAG)
 			dialogShowing = true
 		}
@@ -334,7 +334,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			val bundle = Bundle()
 			bundle.putString(MainContext.TAG, vehicle)
 			MessageDialog.getInstance(MSG_DIALOG_PENDING_UPDATE, bundle, 6, null,
-					getString(R.string.msg_discard), null,
+					getString(R.string.msg_ui_discard), null,
 					getString(R.string.button_yes),
 					getString(R.string.button_no))
 				.show(supportFragmentManager, MessageDialog.TAG)
@@ -352,7 +352,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 
 	override fun onUpdated() {
 		Log.d(TAG, "Updating app widget")
-		MainAppWidget.update(this)
+		MainWidget.update(this)
 		if (retainedContext.isPublisher()) retainedContext.publish()
 	}
 	//================================================
@@ -374,7 +374,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		when (reference) {
 			MSG_DIALOG_NEW_VEHICLE -> {
 				val vehicle = bundle?.getString(MainContext.TAG) ?: EMPTY
-				doNotify(getString(R.string.msg_adding, vehicle))
+				doNotify(getString(R.string.msg_ui_adding, vehicle))
 				retainedContext.newVehicle(vehicle)
 				dialogShowing = false
 				dialog?.dismiss()
@@ -392,12 +392,12 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
 		when (reference) {
 			MSG_DIALOG_NEW_VEHICLE -> {
-				doNotify(getString(R.string.msg_discard_new, bundle?.getString(MainContext.TAG) ?: EMPTY))
+				doNotify(getString(R.string.msg_ui_discard_new, bundle?.getString(MainContext.TAG) ?: EMPTY))
 				retainedContext.populateCurrent(null, true)
 				retainedContext.resetStatus()
 			}
 			MSG_DIALOG_PENDING_UPDATE -> {
-				doNotify(getString(R.string.msg_retaining))
+				doNotify(getString(R.string.msg_ui_retaining))
 				retainedContext.populateCurrent(null)
 			}
 		}
@@ -422,24 +422,24 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 				val result = it.getIntExtra(KEY_PUB, -1)
 				when {
 					(result < 0) -> {
-						doNotify("Error occurred: $result")
+						doNotify(getString(R.string.msg_sub_error, result))
 					}
 					(result == 0) -> {
-						doNotify("Message received from publisher, no change made")
+						doNotify(getString(R.string.msg_sub_no_change))
 					}
 					((result and 1) > 0) -> {
-						doNotify("Publisher attempted to update with empty vehicle name")
+						doNotify(getString(R.string.msg_sub_empty))
 					}
 					else -> {
 						if ((result and 2) > 0) {
 							retainedContext.populateParkingList()
-							doNotify("Publisher added new parking")
+							doNotify(getString(R.string.msg_sub_new_parking))
 						}
 
 						if ((result and 24) > 0) {
 							retainedContext.populateCurrent(null, true)
 							if ((result and 8) > 0) {
-								doNotify("Publisher added new vehicle")
+								doNotify(getString(R.string.msg_sub_new_vehicle))
 								retainedContext.populateVehicleList()
 							}
 							retainedContext.resetStatus()

@@ -62,7 +62,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 		fun getPlayAccessToken(context: Context?): String? {
 			return GoogleCredential.fromStream(
-				context?.assets?.open("wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json")
+				context?.assets?.open("wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json") //TODO
 			).createScoped(
 				listOf("https://www.googleapis.com/auth/firebase.messaging")
 			)?.let {
@@ -165,7 +165,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 				when {
 					list.size > 1 -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
 					list.size == 1 -> {
-						callback?.doNotify("Switch to '$vehicle'")
+						callback?.doNotify(activity?.getString(R.string.msg_ui_switching, vehicle))
 						val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
 						populateCurrent(current)
 						resetStatus()
@@ -193,19 +193,19 @@ class MainContext: Fragment(), DbHelper.Caller {
 			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!, true)
 			when {
 				(result == 0) -> {
-					callback?.doNotify("No change made")
+					callback?.doNotify(activity?.getString(R.string.msg_ui_no_change))
 					return false
 				}
 				((result and 1) > 0) -> {
-					callback?.doNotify("Vehicle name cannot be empty")
+					callback?.doNotify(activity?.getString(R.string.msg_ui_empty))
 					return false
 				}
 				else -> {
 					if ((result and 2) > 0) {
 						populateParkingList()
-						callback?.doNotify("New parking ${currentVehicle.parking} added")
+						callback?.doNotify(activity?.getString(R.string.msg_ui_new_parking, currentVehicle.parking))
 					} else if ((result and 4) > 0) {
-						callback?.doNotify("Exiting parking ${currentVehicle.parking} chosen")
+						callback?.doNotify(activity?.getString(R.string.msg_ui_existing_parking, currentVehicle.parking))
 					}
 
 					return if ((result and 24) > 0) {
@@ -220,7 +220,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 				}
 			}
 		} else {
-			Log.w(TAG, "Database not ready")
+			callback?.doNotify(activity?.getString(R.string.msg_ui_db_not_ready))
 			return false
 		}
 	}
@@ -380,7 +380,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		}
 
 		override fun onPostExecute(result: String?) {
-			Log.w(TAG, "FCM response $result")
+			Log.i(TAG, "FCM response $result")
 		}
 	}
 
@@ -467,9 +467,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 		fun onSwitchVehicle(vehicle: String)
 		fun onStatusChanged()
 		fun onUpdated()
-		fun doNotify(msg: String)
-		fun doNotify(msg: String, stay: Boolean)
-		fun doNotify(ref: Int, msg: String, stay: Boolean)
+		fun doNotify(msg: String?)
+		fun doNotify(msg: String?, stay: Boolean)
+		fun doNotify(ref: Int, msg: String?, stay: Boolean)
 	}
 	private var callback: Callback? = null
 

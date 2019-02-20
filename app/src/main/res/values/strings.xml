@@ -20,13 +20,26 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="button_cancel">Cancel</string>
 	<string name="button_yes">Yes</string>
 	<string name="button_no">No</string>
-	<string name="msg_updated">Record updated</string>
-	<string name="msg_add_new">Add new vehicle \'%s\'?</string>
-	<string name="msg_adding">Adding new vehicle \'%s\'…</string>
-	<string name="msg_discard">Discard changes?</string>
-	<string name="msg_discard_new">Discarding new vehicle \'%s\'…</string>
-	<string name="msg_discarding">Discarding changes…</string>
-	<string name="msg_touch">Touch the record…</string>
-	<string name="msg_retaining">Retaining unsaved changes…</string>
+	<string name="msg_ui_updated">Record updated</string>
+	<string name="msg_ui_add_new">Add new vehicle \'%s\'?</string>
+	<string name="msg_ui_adding">Adding new vehicle \'%s\'…</string>
+	<string name="msg_ui_discard">Discard changes?</string>
+	<string name="msg_ui_discard_new">Discarding new vehicle \'%s\'…</string>
+	<string name="msg_ui_discarding">Discarding changes…</string>
+	<string name="msg_ui_touch">Touch the record…</string>
+	<string name="msg_ui_retaining">Retaining unsaved changes…</string>
+	<string name="msg_ui_switching">Switching to \'%s\'</string>
+	<string name="msg_ui_no_change">No change made</string>
+	<string name="msg_ui_empty">Vehicle name cannot be empty</string>
+	<string name="msg_ui_new_parking">New parking %s added</string>
+	<string name="msg_ui_existing_parking">Exiting parking %s chosen</string>
+	<string name="msg_ui_db_not_ready">Database not ready</string>
+
+	<string name="msg_sub_error">Error occurred: %d</string>
+	<string name="msg_sub_no_change">Message received from publisher, no change made</string>
+	<string name="msg_sub_empty">Publisher attempted to update with empty vehicle name</string>
+	<string name="msg_sub_new_parking">Publisher added new parking</string>
+	<string name="msg_sub_new_vehicle">Publisher added new vehicle</string>
+
 	<string name="fcm_endpoint">https://fcm.googleapis.com/v1/projects/%s/messages:send</string>
 </resources>

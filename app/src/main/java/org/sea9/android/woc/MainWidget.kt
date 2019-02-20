@@ -21,9 +21,9 @@ import org.sea9.android.woc.data.DbHelper
  * </code>
  * This value is not what onUpdate() actually expected. What it needs is the actual ID of the app widget given by the system during the
  * widget instance is added to the home screen. Thus the above code is removed.
- * See org.sea9.android.woc.MainAppWidget#populate(Context, String, String) for how to obtain this ID.
+ * See org.sea9.android.woc.MainWidget#populate(Context, String, String) for how to obtain this ID.
  */
-class MainAppWidget: AppWidgetProvider() {
+class MainWidget: AppWidgetProvider() {
 	companion object {
 		const val TAG = "woc.widget"
 		private const val SFX_FLR = "/F"
@@ -32,7 +32,7 @@ class MainAppWidget: AppWidgetProvider() {
 		fun update(context: Context?) {
 			context?.let {
 				Log.d(TAG, "Updating app widget with explicit request...")
-				Intent(context, MainAppWidget::class.java).also {
+				Intent(context, MainWidget::class.java).also {
 					it.action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 					context.sendBroadcast(it)
 				}
