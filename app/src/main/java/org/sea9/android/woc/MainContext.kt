@@ -2,6 +2,8 @@ package org.sea9.android.woc
 
 import android.content.Context
 import android.database.SQLException
+import android.net.ConnectivityManager
+import android.net.NetworkInfo
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -15,7 +17,11 @@ import org.json.JSONObject
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
+import java.io.BufferedReader
+import java.lang.Exception
 import java.lang.RuntimeException
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.*
 
 class MainContext: Fragment(), DbHelper.Caller {
@@ -25,6 +31,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 		const val STATUS_NORMAL = 0
 		const val STATUS_UPDATED = 1
 		const val STATUS_ADDED = 2
+		private const val JSON_MESSAGE = "message"
+		private const val JSON_DATA = "data"
+		private const val JSON_TOKEN = "token"
 
 		fun getInstance(sfm: FragmentManager): MainContext {
 			var instance = sfm.findFragmentByTag(TAG) as MainContext?
@@ -291,30 +300,88 @@ class MainContext: Fragment(), DbHelper.Caller {
 		Log.w(TAG, "Notifying publisher of the FCM token $token")
 	}
 
-	/*
-{
-  "message":{
-    "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
-    "data":{
-      "Nick" : "Mario",
-      "body" : "great match!",
-      "Room" : "PortugalVSDenmark"
-    }
-  }
-}
-	 */
+	fun getActiveNetworkInfo(): NetworkInfo {
+		val connectivityManager = activity?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+		return connectivityManager.activeNetworkInfo
+	}
+
 	fun publish() {
 		val data = JSONObject()
 		data.put(VehicleRecord.NAM, currentVehicle.name)
 		data.put(VehicleRecord.PRK, currentVehicle.parking)
 		data.put(VehicleRecord.FLR, currentVehicle.floor?: VehicleRecord.EMPTY)
 		data.put(VehicleRecord.LOT, currentVehicle.lot?: VehicleRecord.EMPTY)
-		data.put(VehicleRecord.MOD, currentVehicle.modified?: Date().time)
+		data.put(VehicleRecord.MOD, (currentVehicle.modified?: Date().time).toString())
+		val body = JSONObject()
+		body.put(JSON_TOKEN, "efZuffH-A_c:APA91bHGTYvlvV-Wycb6dekWBbkG1v05g2MLZv1CuI-Sr29a6End1y2XfYJ94Dn9b8g4eR2KFVjBxaaGh-bMMTPPIcw4ti5c-FYghs4oPq5SodLq1O7TOg6PsaKM3rLoOhlmTQxSKxNZ")//TODO
+		body.put(JSON_DATA, data)
 		val message = JSONObject()
-		message.put("data", data)
-		message.put("token", "")
+		message.put(JSON_MESSAGE, body)
 
-		Log.w(TAG, "Building message $message")
+		Log.w(TAG, "Sending message $message...")
+		AsyncPublishTask(this).execute(message)
+	}
+	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, String?>() {
+		override fun onPreExecute() {
+			if (!caller.getActiveNetworkInfo().isConnected)
+				cancel(true)
+		}
+
+		override fun doInBackground(vararg params: JSONObject?): String? {
+			return if (!isCancelled && params.isNotEmpty()) {
+				val buffer = params[0].toString().toByteArray()
+
+				var connection: HttpURLConnection? = null
+				try {
+					val url = URL(
+						caller.getString(R.string.fcm_endpoint,"wheres-our-car")
+					) //TODO TEMP - project ID should be oncfigurable
+
+					connection = url.openConnection() as HttpURLConnection
+					with(connection) {
+						doOutput = true
+						useCaches = false
+						setFixedLengthStreamingMode(buffer.size)
+						requestMethod = "POST"
+						setRequestProperty("Content-Type", "application/json; UTF-8")
+						setRequestProperty("Authorization", "Bearer " + getPlayAccessToken(caller.context))
+
+						outputStream.apply {
+							try {
+								write(buffer)
+							} finally {
+								flush()
+								close()
+							}
+						}
+
+						when {
+							(responseCode / 100 == 5) -> {
+								Log.w(TAG, "FCM service not available")
+								null
+							}
+							(responseCode == 200) -> {
+								inputStream.bufferedReader().use(BufferedReader::readText)
+							}
+							else -> {
+								errorStream.bufferedReader().use(BufferedReader::readText)
+							}
+						}
+					}
+				} catch (e: Exception) {
+					Log.w(TAG, e)
+					null
+				} finally {
+					connection?.disconnect()
+				}
+			} else {
+				null
+			}
+		}
+
+		override fun onPostExecute(result: String?) {
+			Log.w(TAG, "FCM response $result")
+		}
 	}
 
 	/*=========================
@@ -342,7 +409,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 		Log.d(TAG, "init db")
 		AsyncDbInitTask(this).execute()
 	}
-	class AsyncDbInitTask (private val caller: MainContext): AsyncTask<Void, Void, Void>() {
+	private class AsyncDbInitTask (private val caller: MainContext): AsyncTask<Void, Void, Void>() {
 		override fun doInBackground(vararg params: Void?): Void? {
 			val helper = DbHelper(caller)
 			caller.setDbHelper(helper)

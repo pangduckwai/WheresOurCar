@@ -409,7 +409,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	/*========================================
 	 * Process broadcast from the FCM service
 	 */
-	object BroadcastObserver: Observable() {
+	object BroadcastObserver: Observable() { //Note: this is how to implement singleton in Kotlin
 		fun onUpdated(intent: Intent?) {
 			setChanged()
 			notifyObservers(intent)

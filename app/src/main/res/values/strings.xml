@@ -28,4 +28,5 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_discarding">Discarding changes…</string>
 	<string name="msg_touch">Touch the record…</string>
 	<string name="msg_retaining">Retaining unsaved changes…</string>
+	<string name="fcm_endpoint">https://fcm.googleapis.com/v1/projects/%s/messages:send</string>
 </resources>
