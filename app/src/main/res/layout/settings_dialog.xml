@@ -1,73 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.NestedScrollView
+<LinearLayout
 		xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:card_view="http://schemas.android.com/apk/res-auto"
 		android:layout_width="match_parent"
-		android:layout_height="match_parent">
+		android:layout_height="wrap_content"
+		android:focusable="true"
+		android:focusableInTouchMode="true"
+		android:minWidth="@dimen/dialog_minWidth"
+		android:orientation="vertical">
 
-	<LinearLayout
+	<android.support.v7.widget.CardView
+			android:id="@+id/card_alone"
+			android:layout_gravity="center"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:paddingTop="@dimen/margin_narrow"
-			android:paddingBottom="@dimen/margin_normal"
-			android:focusable="true"
-			android:focusableInTouchMode="true"
 			android:minWidth="@dimen/dialog_minWidth"
-			android:orientation="vertical">
+			android:layout_marginBottom="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/fab_margin"
+			card_view:cardCornerRadius="@dimen/margin_narrow"
+			card_view:cardBackgroundColor="@color/colorCard">
+		<RadioButton
+				android:id="@+id/radio_alone"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/margin_normal"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/fab_margin"
+				android:layout_gravity="start|top"
+				android:textSize="@dimen/text_large"
+				android:text="@string/label_alone"/>
+	</android.support.v7.widget.CardView>
 
-		<android.support.v7.widget.CardView
-				android:id="@+id/card_pub"
-				android:layout_gravity="center"
+	<android.support.v7.widget.CardView
+			android:id="@+id/card_publisher"
+			android:layout_gravity="center"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:minWidth="@dimen/dialog_minWidth"
+			android:layout_marginBottom="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_narrow"
+			card_view:cardCornerRadius="@dimen/margin_narrow"
+			card_view:cardBackgroundColor="@color/colorCard">
+		<RadioButton
+				android:id="@+id/radio_publisher"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/margin_normal"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/fab_margin"
+				android:layout_gravity="start|top"
+				android:textSize="@dimen/text_large"
+				android:text="@string/label_publisher"/>
+	</android.support.v7.widget.CardView>
+
+	<android.support.v7.widget.CardView
+			android:id="@+id/card_subscriber"
+			android:layout_gravity="center"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:minWidth="@dimen/dialog_minWidth"
+			android:layout_marginBottom="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_narrow"
+			card_view:cardCornerRadius="@dimen/margin_narrow"
+			card_view:cardBackgroundColor="@color/colorCard">
+		<android.support.constraint.ConstraintLayout
+				xmlns:app="http://schemas.android.com/apk/res-auto"
 				android:layout_width="match_parent"
-				android:layout_height="@dimen/card_height"
-				android:layout_margin="@dimen/margin_narrow"
-				card_view:cardCornerRadius="@dimen/margin_narrow"
-				card_view:cardBackgroundColor="@color/colorCard">
-			<TextView
-					android:id="@+id/temp_pub"
+				android:layout_height="wrap_content">
+			<RadioButton
+					android:id="@+id/radio_subscriber"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:layout_margin="@dimen/margin_normal"
-					android:layout_gravity="center_vertical|center"
-					android:background="@android:color/darker_gray"
-					android:textSize="@dimen/text_title"
-					android:text="@string/app_name"/>
-		</android.support.v7.widget.CardView>
+					android:layout_marginBottom="@dimen/margin_normal"
+					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginTop="@dimen/fab_margin"
+					android:layout_gravity="start|top"
+					android:textSize="@dimen/text_large"
+					android:text="@string/label_subscriber"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toTopOf="parent"/>
 
-		<android.support.v7.widget.CardView
-				android:id="@+id/card_sub"
-				android:layout_gravity="center"
+			<EditText
+					android:id="@+id/text_email"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:layout_marginBottom="@dimen/margin_normal"
+					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginTop="@dimen/margin_normal"
+					android:textSize="@dimen/text_medium"
+					android:inputType="textEmailAddress"
+					android:imeOptions="actionDone|flagNoExtractUi"
+					android:enabled="false"
+					android:hint="@string/hint_email"
+					app:layout_constraintEnd_toEndOf="parent"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/radio_subscriber"/>
+
+			<ImageButton
+					android:id="@+id/subscribes"
+					android:layout_width="@dimen/text_title"
+					android:layout_height="@dimen/text_title"
+					android:layout_marginEnd="@dimen/margin_narrow"
+					android:contentDescription="@string/content_email"
+					android:background="?android:attr/selectableItemBackground"
+					android:src="@drawable/icon_mail"
+					app:layout_constraintBottom_toBottomOf="@+id/text_email"
+					app:layout_constraintEnd_toEndOf="@+id/text_email"
+					app:layout_constraintTop_toTopOf="@+id/text_email"/>
+		</android.support.constraint.ConstraintLayout>
+	</android.support.v7.widget.CardView>
+
+	<android.support.v7.widget.CardView
+			android:id="@+id/card_subscribers"
+			android:layout_gravity="center"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:minWidth="@dimen/dialog_minWidth"
+			android:layout_marginBottom="@dimen/fab_margin"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_narrow"
+			card_view:cardCornerRadius="@dimen/margin_narrow"
+			card_view:cardBackgroundColor="@color/colorCard">
+		<LinearLayout
 				android:layout_width="match_parent"
-				android:layout_height="@dimen/card_height"
-				android:layout_margin="@dimen/margin_narrow"
-				card_view:cardCornerRadius="@dimen/margin_narrow"
-				card_view:cardBackgroundColor="@color/colorCard">
+				android:layout_height="wrap_content"
+				android:layout_marginEnd="@dimen/fab_margin"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:orientation="vertical">
 			<TextView
-					android:id="@+id/temp_sub"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:layout_margin="@dimen/margin_normal"
-					android:layout_gravity="center_vertical|center"
-					android:textSize="@dimen/text_title"
-					android:text="@string/app_name"/>
-		</android.support.v7.widget.CardView>
-
-		<android.support.v7.widget.CardView
-				android:id="@+id/card_oth"
-				android:layout_gravity="center"
-				android:layout_width="match_parent"
-				android:layout_height="@dimen/card_height"
-				android:layout_margin="@dimen/margin_narrow"
-				card_view:cardCornerRadius="@dimen/margin_narrow"
-				card_view:cardBackgroundColor="@color/colorCard">
-			<TextView
-					android:id="@+id/temp_oth"
-					android:layout_width="wrap_content"
+					android:layout_margin="@dimen/margin_narrow"
+					android:layout_gravity="start|top"
+					android:text="@string/label_subscribers"
+					android:textSize="@dimen/text_title"/>
+			<android.support.v7.widget.RecyclerView
+					android:id="@+id/subscribers"
+					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:layout_margin="@dimen/margin_normal"
-					android:layout_gravity="center_vertical|center"
-					android:textSize="@dimen/text_title"
-					android:text="@string/app_name"/>
-		</android.support.v7.widget.CardView>
-	</LinearLayout>
-</android.support.v4.widget.NestedScrollView>
+					android:minHeight="@dimen/dialog_minHeight"
+					android:focusable="true"
+					android:clickable="true"
+					android:padding="@dimen/margin_narrow" />
+		</LinearLayout>
+	</android.support.v7.widget.CardView>
+</LinearLayout>

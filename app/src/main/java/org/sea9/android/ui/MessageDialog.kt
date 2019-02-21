@@ -66,13 +66,13 @@ class MessageDialog : DialogFragment() {
 		}
 		val neutral = args?.getString(NEU)?.let {
 			it
-		} ?: context?.getString(R.string.button_okay)
+		} ?: context?.getString(R.string.label_okay)
 		val positive = args?.getString(POS)?.let {
 			it
-		} ?: context?.getString(R.string.button_okay)
+		} ?: context?.getString(R.string.label_okay)
 		val negative = args?.getString(NEG)?.let {
 			it
-		} ?: context?.getString(R.string.button_cancel)
+		} ?: context?.getString(R.string.label_cancel)
 
 		var hasNeutral = false
 		var hasNegative = false

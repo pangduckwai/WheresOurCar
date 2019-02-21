@@ -251,4 +251,58 @@ object DbContract {
 			}
 		}
 	}
+
+	class Token : BaseColumns {
+		companion object {
+			private const val TABLE = "Token"
+			private const val IDX_TOKEN = "idxToken"
+			private val COLUMNS = arrayOf(
+				PKEY,
+				COMMON_NAME,
+				COMMON_MODF
+			)
+
+			const val SQL_CREATE =
+				"create table $TABLE (" +
+						"$PKEY integer primary key autoincrement," +
+						"$COMMON_NAME text not null COLLATE NOCASE," +
+						"$COMMON_MODF integer)"
+			const val SQL_CREATE_IDX = "create unique index $IDX_TOKEN on $TABLE ($COMMON_NAME)"
+			const val SQL_DROP = "drop table if exists $TABLE"
+			const val SQL_DROP_IDX = "drop index if exists $IDX_TOKEN"
+			private const val SQL_WHERE = "$COMMON_NAME = ?"
+
+			fun select(helper: DbHelper): List<String> {
+				val cursor = helper.readableDatabase
+					.query(
+						TABLE, COLUMNS, null, null, null, null,
+						COMMON_MODF
+					)
+
+				val result = mutableListOf<String>()
+				cursor.use {
+					with(it) {
+						while (moveToNext()) {
+							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
+							result.add(name)
+						}
+					}
+				}
+				return result
+			}
+
+			fun insert(helper: DbHelper, token: String): Long {
+				val newRow = ContentValues().apply {
+					put(COMMON_NAME, token)
+					put(COMMON_MODF, Date().time)
+				}
+				return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)
+			}
+
+			fun delete(helper: DbHelper, token: String): Int {
+				val args = arrayOf(token)
+				return helper.writableDatabase.delete(TABLE, SQL_WHERE, args)
+			}
+		}
+	}
 }

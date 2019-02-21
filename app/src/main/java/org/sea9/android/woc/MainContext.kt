@@ -1,5 +1,6 @@
 package org.sea9.android.woc
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.database.SQLException
 import android.net.ConnectivityManager
@@ -16,6 +17,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import org.json.JSONObject
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
+import org.sea9.android.woc.data.TokenAdaptor
 import org.sea9.android.woc.data.VehicleRecord
 import java.io.BufferedReader
 import java.lang.Exception
@@ -24,7 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 
-class MainContext: Fragment(), DbHelper.Caller {
+class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 	companion object {
 		const val TAG = "woc.retained_frag"
 		const val PATTERN_DATE = "yyyy-MM-dd HH:mm:ss"
@@ -46,8 +48,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 		fun getOperationMode(context: Context?): MODE {
 			return if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
-				context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
-					when (it.getInt(MainActivity.KEY_MODE, 2)) { //TODO Testing only! Default value should be "STANDALONE"
+				context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+					when (it.getInt(MainActivity.KEY_MODE, 0)) {
 						0 -> MODE.STANDALONE
 						1 -> MODE.SUBSCRIBER
 						2 -> MODE.PUBLISHER
@@ -60,14 +62,31 @@ class MainContext: Fragment(), DbHelper.Caller {
 			}
 		}
 
+		@SuppressLint("ApplySharedPref")
+		fun updateSetting(context: Context?, selection: Int, email: String?) {
+			context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+				with(it.edit()) {
+					if (selection >= 0) {
+						putInt(MainActivity.KEY_MODE, selection)
+					} // < 0 means ignore
+					if (email != null) putString(MainActivity.KEY_PUB, email) // null means ignore
+					commit()
+				}
+			}
+		}
+
 		fun getPlayAccessToken(context: Context?): String? {
-			return GoogleCredential.fromStream(
-				context?.assets?.open("wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json") //TODO
-			).createScoped(
-				listOf("https://www.googleapis.com/auth/firebase.messaging")
-			)?.let {
-				it.refreshToken()
-				it.accessToken
+			return if (context == null) {
+				null
+			} else {
+				GoogleCredential.fromStream(
+					context.assets?.open(context.getString(R.string.firebase_account_key))
+				).createScoped(
+					listOf(context.getString(R.string.firebase_scope_fcm))
+				)?.let {
+					it.refreshToken()
+					it.accessToken
+				}
 			}
 		}
 
@@ -169,6 +188,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 						val current = DbContract.Vehicle.switch(dbHelper!!, list[0].rid)
 						populateCurrent(current)
 						resetStatus()
+						publish()
 						callback?.onUpdated()
 					}
 					else -> {
@@ -193,7 +213,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!, true)
 			when {
 				(result == 0) -> {
-					callback?.doNotify(activity?.getString(R.string.msg_ui_no_change))
+					//callback?.doNotify(activity?.getString(R.string.msg_ui_no_change))
 					return false
 				}
 				((result and 1) > 0) -> {
@@ -212,6 +232,7 @@ class MainContext: Fragment(), DbHelper.Caller {
 						populateCurrent(null, true)
 						if ((result and 8) > 0) populateVehicleList()
 						resetStatus()
+						publish()
 						callback?.onUpdated()
 						true
 					} else {
@@ -279,25 +300,22 @@ class MainContext: Fragment(), DbHelper.Caller {
 	fun isPublisher(): Boolean {
 		return (operationMode == MODE.PUBLISHER)
 	}
+	fun setMode(mode: Int) {
+		operationMode = when(mode) {
+			1 -> MODE.SUBSCRIBER
+			2 -> MODE.PUBLISHER
+			else -> MODE.STANDALONE
+		}
+	}
 
-//	private var messagingToken: String? = null
-//	private fun retrieveFirebaseToken() {
-//		FirebaseInstanceId.getInstance().instanceId
-//			.addOnCompleteListener(OnCompleteListener { task ->
-//				if (!task.isSuccessful) {
-//					Log.w(TAG, "getInstanceId failed", task.exception)
-//					return@OnCompleteListener
-//				}
-//
-//				// Get new Instance ID token
-//				messagingToken = task.result?.token
-//
-//				Log.w(TAG, "FCM Token: $messagingToken")
-//			})
-//	}
+	lateinit var tokenAdaptor: TokenAdaptor
+		private set
 
 	fun notifyPublisher(token: String) {
-		Log.w(TAG, "Notifying publisher of the FCM token $token")
+			val savedToken = activity
+				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+				?.getString(MainActivity.KEY_TOKEN, null)
+		Log.w(TAG, "Notifying publisher of the FCM token changed from $savedToken to $token")
 	}
 
 	fun getActiveNetworkInfo(): NetworkInfo {
@@ -306,20 +324,25 @@ class MainContext: Fragment(), DbHelper.Caller {
 	}
 
 	fun publish() {
+		if (!isPublisher()) return
+
 		val data = JSONObject()
 		data.put(VehicleRecord.NAM, currentVehicle.name)
 		data.put(VehicleRecord.PRK, currentVehicle.parking)
 		data.put(VehicleRecord.FLR, currentVehicle.floor?: VehicleRecord.EMPTY)
 		data.put(VehicleRecord.LOT, currentVehicle.lot?: VehicleRecord.EMPTY)
 		data.put(VehicleRecord.MOD, (currentVehicle.modified?: Date().time).toString())
-		val body = JSONObject()
-		body.put(JSON_TOKEN, "efZuffH-A_c:APA91bHGTYvlvV-Wycb6dekWBbkG1v05g2MLZv1CuI-Sr29a6End1y2XfYJ94Dn9b8g4eR2KFVjBxaaGh-bMMTPPIcw4ti5c-FYghs4oPq5SodLq1O7TOg6PsaKM3rLoOhlmTQxSKxNZ")//TODO
-		body.put(JSON_DATA, data)
-		val message = JSONObject()
-		message.put(JSON_MESSAGE, body)
 
-		Log.w(TAG, "Sending message $message...")
-		AsyncPublishTask(this).execute(message)
+		DbContract.Token.select(dbHelper!!).forEach { token ->
+			val body = JSONObject()
+			body.put(JSON_TOKEN, token)
+			body.put(JSON_DATA, data)
+			JSONObject().put(JSON_MESSAGE, body).also {
+				Log.w(TAG, "Publishing message $it...")
+			}.also {
+				AsyncPublishTask(this).execute(it) // The doc said each HttpURLConnection instance is used to make a single request
+			}
+		}
 	}
 	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, String?>() {
 		override fun onPreExecute() {
@@ -334,8 +357,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 				var connection: HttpURLConnection? = null
 				try {
 					val url = URL(
-						caller.getString(R.string.fcm_endpoint,"wheres-our-car")
-					) //TODO TEMP - project ID should be oncfigurable
+						caller.getString(R.string.firebase_endpoint_fcm)
+					)
 
 					connection = url.openConnection() as HttpURLConnection
 					with(connection) {
@@ -388,6 +411,9 @@ class MainContext: Fragment(), DbHelper.Caller {
 	 * SQLite database related
 	 */
 	private var dbHelper: DbHelper? = null
+	override fun getDbHelper(): DbHelper? {
+		return dbHelper
+	}
 	private fun setDbHelper(helper: DbHelper) {
 		dbHelper = helper
 	}
@@ -428,6 +454,8 @@ class MainContext: Fragment(), DbHelper.Caller {
 
 		operationMode = getOperationMode(activity)
 		Log.w(TAG, "Operation mode $operationMode")
+
+		tokenAdaptor = TokenAdaptor(this)
 	}
 
 	override fun onResume() {
@@ -441,12 +469,6 @@ class MainContext: Fragment(), DbHelper.Caller {
 			populateParkingList()
 			populateCurrent(null, true)
 		}
-//		if ((operationMode == MODE.PUBLISHER) || (operationMode == MODE.SUBSCRIBER)) {
-//			val savedToken = activity
-//				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-//				?.getString(MainActivity.KEY_TOKEN, null)
-//			Log.w(TAG, "Saved Token: $savedToken")
-//		}
 	}
 
 	override fun onDestroy() {

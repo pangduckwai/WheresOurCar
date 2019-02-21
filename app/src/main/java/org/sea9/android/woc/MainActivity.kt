@@ -20,7 +20,8 @@ import org.sea9.android.ui.MessageDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, MessageDialog.Callback {
+class MainActivity : AppCompatActivity(), Observer
+	, MainContext.Callback, SettingsDialog.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.main"
 		const val EMPTY = ""
@@ -225,7 +226,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		// as you specify a parent activity in AndroidManifest.xml.
 		return when (item.itemId) {
 			R.id.action_settings -> {
-				SettingsDialog.getInstance().show(supportFragmentManager, SettingsDialog.TAG)
+				SettingsDialog.getInstance(retainedContext).show(supportFragmentManager, SettingsDialog.TAG)
 				true
 			}
 			R.id.action_about -> {
@@ -334,8 +335,8 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 			bundle.putString(MainContext.TAG, vehicle)
 			MessageDialog.getInstance(MSG_DIALOG_PENDING_UPDATE, bundle, 6, null,
 					getString(R.string.msg_ui_discard), null,
-					getString(R.string.button_yes),
-					getString(R.string.button_no))
+					getString(R.string.label_yes),
+					getString(R.string.label_no))
 				.show(supportFragmentManager, MessageDialog.TAG)
 			dialogShowing = true
 		}
@@ -352,11 +353,24 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 	override fun onUpdated() {
 		Log.d(TAG, "Updating app widget")
 		MainWidget.update(this)
-		if (retainedContext.isPublisher()) retainedContext.publish()
 	}
-	//================================================
 
-	/*=====================================================
+	/*==================================================
+	 * @see org.sea9.android.ui.SettingsDialog.Callback
+	 */
+	override fun onSettingChanged(selection: Int, email: String?) {
+		retainedContext.setMode(selection)
+		retainedContext.publish()
+		MainContext.updateSetting(this, selection, email)
+	}
+
+	override fun subscribes(email: String?) {
+		Log.w(TAG, "Sending subscription request to $email...")
+		// TODO send email here!!!
+		MainContext.updateSetting(this, -1, email)
+	}
+
+	/*=================================================
 	 * @see org.sea9.android.ui.MessageDialog.Callback
 	 */
 	private var dialogShowing = false
@@ -403,7 +417,6 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback, Messag
 		dialogShowing = false
 		dialog?.dismiss()
 	}
-	//=====================================================
 
 	/*========================================
 	 * Process broadcast from the FCM service

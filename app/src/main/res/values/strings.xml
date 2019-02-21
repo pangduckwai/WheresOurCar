@@ -15,11 +15,17 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="hint_floor">Floor</string>
 	<string name="hint_lot">Space</string>
 	<string name="hint_update">Last update</string>
+	<string name="hint_email">Publisher\'s email</string>
 	<string name="content_clear">Clear text</string>
-	<string name="button_okay">Okay</string>
-	<string name="button_cancel">Cancel</string>
-	<string name="button_yes">Yes</string>
-	<string name="button_no">No</string>
+	<string name="content_email">Send email</string>
+	<string name="label_okay">Okay</string>
+	<string name="label_cancel">Cancel</string>
+	<string name="label_yes">Yes</string>
+	<string name="label_no">No</string>
+	<string name="label_alone">Stand Alone</string>
+	<string name="label_publisher">Publisher</string>
+	<string name="label_subscriber">Subscriber</string>
+	<string name="label_subscribers">Subscribers</string>
 	<string name="msg_ui_updated">Record updated</string>
 	<string name="msg_ui_add_new">Add new vehicle \'%s\'?</string>
 	<string name="msg_ui_adding">Adding new vehicle \'%s\'…</string>
@@ -39,5 +45,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_sub_empty">Publisher attempted to update with empty vehicle name</string>
 	<string name="msg_sub_new_parking">Publisher added new parking</string>
 	<string name="msg_sub_new_vehicle">Publisher added new vehicle</string>
-	<string name="fcm_endpoint">https://fcm.googleapis.com/v1/projects/%s/messages:send</string>
+	<string name="firebase_account_key">wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json</string>
+	<string name="firebase_endpoint_fcm">https://fcm.googleapis.com/v1/projects/wheres-our-car/messages:send</string>
+	<string name="firebase_scope_fcm">https://www.googleapis.com/auth/firebase.messaging</string>
 </resources>
