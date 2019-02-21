@@ -333,33 +333,97 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		data.put(VehicleRecord.LOT, currentVehicle.lot?: VehicleRecord.EMPTY)
 		data.put(VehicleRecord.MOD, (currentVehicle.modified?: Date().time).toString())
 
-		DbContract.Token.select(dbHelper!!).forEach { token ->
+		val tokens = DbContract.Token.select(dbHelper!!)
+		val messages = Array<JSONObject?>(tokens.size) { null }
+		tokens.forEachIndexed { index, token ->
 			val body = JSONObject()
 			body.put(JSON_TOKEN, token)
 			body.put(JSON_DATA, data)
 			JSONObject().put(JSON_MESSAGE, body).also {
 				Log.w(TAG, "Publishing message $it...")
 			}.also {
-				AsyncPublishTask(this).execute(it) // The doc said each HttpURLConnection instance is used to make a single request
+				messages[index] = it
 			}
 		}
+		AsyncPublishTask(this).execute(*messages)
 	}
-	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, String?>() {
+	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, Array<String?>?>() {
+		companion object {
+			private const val METHOD = "POST"
+			private const val CNTENT = "Content-Type"
+			private const val JSONU8 = "application/json; UTF-8"
+			private const val AUTHZN = "Authorization"
+
+			private fun httpRequest(url: URL, oauthToken: String, obj: JSONObject): Boolean {
+				// The doc said each HttpURLConnection instance is used to make a single request
+				val buffer = obj.toString().toByteArray()
+				var connection: HttpURLConnection? = null
+
+				val result = try {
+					connection = url.openConnection() as HttpURLConnection
+					with(connection) {
+						doOutput = true
+						useCaches = false
+						setFixedLengthStreamingMode(buffer.size)
+						requestMethod = METHOD
+						setRequestProperty(CNTENT, JSONU8)
+						setRequestProperty(AUTHZN, "Bearer $oauthToken")
+
+						outputStream.apply {
+							try {
+								write(buffer)
+							} finally {
+								flush()
+								close()
+							}
+						}
+
+						when {
+							(responseCode / 100 == 5) -> {
+								null
+							}
+							(responseCode == 200) -> {
+								inputStream.bufferedReader().use(BufferedReader::readText)
+							}
+							else -> {
+								errorStream.bufferedReader().use(BufferedReader::readText)
+							}
+						}
+					}
+				} catch (e: Exception) {
+					Log.w(TAG, e)
+					null
+				} finally {
+					connection?.disconnect()
+				}
+
+				return (result != null) //TODO TEMP
+			}
+		}
+
 		override fun onPreExecute() {
 			if (!caller.getActiveNetworkInfo().isConnected)
 				cancel(true)
 		}
 
-		override fun doInBackground(vararg params: JSONObject?): String? {
-			return if (!isCancelled && params.isNotEmpty()) {
-				val buffer = params[0].toString().toByteArray()
+		override fun doInBackground(vararg params: JSONObject?): Array<String?>? {
+			if (params.isEmpty()) return null
 
+			val url = URL(caller.getString(R.string.firebase_endpoint_fcm, caller.getString(R.string.firebase_project_id)))
+			val result = Array<String?>(params.size) { null }
+			params.forEachIndexed { index, param ->
+				if (isCancelled) return@forEachIndexed
+
+				// TODO TEMP - for debug
+				if (param?.getJSONObject(JSON_MESSAGE)?.getString(JSON_TOKEN)?.startsWith("0000000")!!) {
+					result[index] = "Testing token starting with '0000000' found $index"
+					return@forEachIndexed
+				}
+
+				val buffer = param.toString().toByteArray()
 				var connection: HttpURLConnection? = null
-				try {
-					val url = URL(
-						caller.getString(R.string.firebase_endpoint_fcm)
-					)
 
+				result[index] = try {
 					connection = url.openConnection() as HttpURLConnection
 					with(connection) {
 						doOutput = true
@@ -397,13 +461,14 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 				} finally {
 					connection?.disconnect()
 				}
-			} else {
-				null
 			}
+			return result
 		}
 
-		override fun onPostExecute(result: String?) {
-			Log.i(TAG, "FCM response $result")
+		override fun onPostExecute(result: Array<String?>?) {
+			result?.forEach {
+				Log.w(TAG, "FCM response $it")
+			}
 		}
 	}
 
