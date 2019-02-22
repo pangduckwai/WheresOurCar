@@ -170,27 +170,20 @@ class MainActivity : AppCompatActivity(), Observer
 		textUpdate = findViewById(R.id.update)
 
 		fab.setOnClickListener {
-//			retainedContext.updateFloor(textFloor.text.toString())
-//			retainedContext.updateLot(textLot.text.toString())
-//			retainedContext.updateParking(textParking.text.toString())
-//			if (retainedContext.isUpdated()) {
-//				doNotify(getString(R.string.msg_ui_discarding))
-//				retainedContext.populateCurrent(null, true)
-//				retainedContext.resetStatus()
-//			} else {
-//				val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
-//				doNotify(getString(R.string.msg_ui_touch))
-//				textUpdate.text = formatter.format(Date())
-//				retainedContext.setUpdated()
-//			}
-//			clearKeyboard(currentFocus ?: it)
-			val pattern = getString(R.string.firebase_succeed_fcm)
-			Log.w(TAG, "Regex pattern: $pattern")
-			val regex = pattern.toRegex()
-			val matchResult = regex.matchEntire("projects/wheres-our-car/messages/0:1550742278732972%ac4c9c32f9fd7ecd")
-			val projId = matchResult?.groupValues!![1]
-			val mssgId = matchResult?.groupValues!![2]
-			Log.w(TAG, "Result: sent message $mssgId to project $projId")
+			retainedContext.updateFloor(textFloor.text.toString())
+			retainedContext.updateLot(textLot.text.toString())
+			retainedContext.updateParking(textParking.text.toString())
+			if (retainedContext.isUpdated()) {
+				doNotify(getString(R.string.msg_ui_discarding))
+				retainedContext.populateCurrent(null, true)
+				retainedContext.resetStatus()
+			} else {
+				val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
+				doNotify(getString(R.string.msg_ui_touch))
+				textUpdate.text = formatter.format(Date())
+				retainedContext.setUpdated()
+			}
+			clearKeyboard(currentFocus ?: it)
 		}
 	}
 

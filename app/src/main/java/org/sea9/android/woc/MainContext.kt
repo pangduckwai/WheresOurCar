@@ -347,14 +347,17 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		}
 		AsyncPublishTask(this).execute(*messages)
 	}
-	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, Array<String?>?>() {
+	private class AsyncPublishTask(private val caller: MainContext): AsyncTask<JSONObject, Void, Void?>() {
 		companion object {
 			private const val METHOD = "POST"
 			private const val CNTENT = "Content-Type"
 			private const val JSONU8 = "application/json; UTF-8"
 			private const val AUTHZN = "Authorization"
+			private const val RETRY = 5
+			private const val INIT_BACKOFF_DELAY = 1000
+			private const val MAX_BACKOFF_DELAY = 1024000
 
-			private fun httpRequest(url: URL, oauthToken: String, obj: JSONObject): Boolean {
+			private fun httpRequest(url: URL, oauthToken: String?, obj: JSONObject, projectId: String, pattern: Regex): Boolean {
 				// The doc said each HttpURLConnection instance is used to make a single request
 				val buffer = obj.toString().toByteArray()
 				var connection: HttpURLConnection? = null
@@ -397,19 +400,32 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 					connection?.disconnect()
 				}
 
-				return (result != null) //TODO TEMP
+				return if (result == null)
+					false
+				else {
+					Log.w(TAG, "Publishing response $result")
+					val match = pattern.find(result)
+					match?.groupValues?.get(1) == projectId
+				}
 			}
 		}
+
+		private lateinit var projectId: String
+		private lateinit var pattern: Regex
 
 		override fun onPreExecute() {
 			if (!caller.getActiveNetworkInfo().isConnected)
 				cancel(true)
+			else {
+				projectId = caller.getString(R.string.firebase_project_id)
+				pattern = caller.getString(R.string.firebase_succeed_fcm).toRegex()
+			}
 		}
 
-		override fun doInBackground(vararg params: JSONObject?): Array<String?>? {
+		override fun doInBackground(vararg params: JSONObject?): Void? {
 			if (params.isEmpty()) return null
 
-			val url = URL(caller.getString(R.string.firebase_endpoint_fcm, caller.getString(R.string.firebase_project_id)))
+			val url = URL(caller.getString(R.string.firebase_endpoint_fcm, projectId))
 			val result = Array<String?>(params.size) { null }
 			params.forEachIndexed { index, param ->
 				if (isCancelled) return@forEachIndexed
@@ -420,55 +436,23 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 					return@forEachIndexed
 				}
 
-				val buffer = param.toString().toByteArray()
-				var connection: HttpURLConnection? = null
-
-				result[index] = try {
-					connection = url.openConnection() as HttpURLConnection
-					with(connection) {
-						doOutput = true
-						useCaches = false
-						setFixedLengthStreamingMode(buffer.size)
-						requestMethod = "POST"
-						setRequestProperty("Content-Type", "application/json; UTF-8")
-						setRequestProperty("Authorization", "Bearer " + getPlayAccessToken(caller.context))
-
-						outputStream.apply {
-							try {
-								write(buffer)
-							} finally {
-								flush()
-								close()
-							}
-						}
-
-						when {
-							(responseCode / 100 == 5) -> {
-								Log.w(TAG, "FCM service not available")
-								null
-							}
-							(responseCode == 200) -> {
-								inputStream.bufferedReader().use(BufferedReader::readText)
-							}
-							else -> {
-								errorStream.bufferedReader().use(BufferedReader::readText)
-							}
-						}
+				var count = 1
+				var backoff = INIT_BACKOFF_DELAY
+				val rand = Random()
+				while (!httpRequest(url, getPlayAccessToken(caller.context), param, projectId, pattern) &&
+					   (count < RETRY) && (backoff < (MAX_BACKOFF_DELAY/2))) {
+					val sleep = (backoff / 2 + rand.nextInt(backoff)).toLong()
+					Log.w(TAG, "Failed publishing $param, retry #$count in ${sleep}ms")
+					count ++
+					backoff *= 2
+					try {
+						Thread.sleep(sleep)
+					} catch (e: InterruptedException) {
+						Thread.currentThread().interrupt()
 					}
-				} catch (e: Exception) {
-					Log.w(TAG, e)
-					null
-				} finally {
-					connection?.disconnect()
 				}
 			}
-			return result
-		}
-
-		override fun onPostExecute(result: Array<String?>?) {
-			result?.forEach {
-				Log.w(TAG, "FCM response $it")
-			}
+			return null
 		}
 	}
 
