@@ -254,46 +254,47 @@ object DbContract {
 
 	class Token : BaseColumns {
 		companion object {
-			private const val TABLE = "Token"
-			private const val IDX_TOKEN = "idxToken"
+			const val TABLE = "Token"
+			private const val COL_TOKEN = "token"
+			private const val COL_SUBSCRIBER = "subscriber"
 			private val COLUMNS = arrayOf(
-				PKEY,
-				COMMON_NAME,
+				COL_TOKEN,
+				COL_SUBSCRIBER,
 				COMMON_MODF
 			)
 
 			const val SQL_CREATE =
 				"create table $TABLE (" +
-						"$PKEY integer primary key autoincrement," +
-						"$COMMON_NAME text not null COLLATE NOCASE," +
+						"$COL_TOKEN text primary key," +
+						"$COL_SUBSCRIBER text not null COLLATE NOCASE," +
 						"$COMMON_MODF integer)"
-			const val SQL_CREATE_IDX = "create unique index $IDX_TOKEN on $TABLE ($COMMON_NAME)"
 			const val SQL_DROP = "drop table if exists $TABLE"
-			const val SQL_DROP_IDX = "drop index if exists $IDX_TOKEN"
-			private const val SQL_WHERE = "$COMMON_NAME = ?"
+			private const val SQL_WHERE = "$COL_TOKEN = ?"
 
-			fun select(helper: DbHelper): List<String> {
+			fun select(helper: DbHelper): List<TokenRecord> {
 				val cursor = helper.readableDatabase
 					.query(
-						TABLE, COLUMNS, null, null, null, null,
-						COMMON_MODF
+						TABLE, COLUMNS, null, null, null, null, COL_SUBSCRIBER
 					)
 
-				val result = mutableListOf<String>()
+				val result = mutableListOf<TokenRecord>()
 				cursor.use {
 					with(it) {
 						while (moveToNext()) {
-							val name = getString(getColumnIndexOrThrow(COMMON_NAME))
-							result.add(name)
+							val token = getString(getColumnIndexOrThrow(COL_TOKEN))
+							val subscriber = getString(getColumnIndexOrThrow(COL_SUBSCRIBER))
+							val modified = getLong(getColumnIndexOrThrow(COMMON_MODF))
+							result.add(TokenRecord(token, subscriber, modified))
 						}
 					}
 				}
 				return result
 			}
 
-			fun insert(helper: DbHelper, token: String): Long {
+			fun insert(helper: DbHelper, subscriber: String, token: String): Long {
 				val newRow = ContentValues().apply {
-					put(COMMON_NAME, token)
+					put(COL_SUBSCRIBER, subscriber)
+					put(COL_TOKEN, token)
 					put(COMMON_MODF, Date().time)
 				}
 				return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)

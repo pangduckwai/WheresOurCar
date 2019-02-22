@@ -15,6 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="hint_floor">Floor</string>
 	<string name="hint_lot">Space</string>
 	<string name="hint_update">Last update</string>
+	<string name="hint_name">Subscriber\'s name</string>
 	<string name="hint_email">Publisher\'s email</string>
 	<string name="content_clear">Clear text</string>
 	<string name="content_email">Send email</string>

@@ -9,20 +9,20 @@ import android.view.*
 import android.widget.ImageButton
 import android.widget.RadioButton
 import android.widget.TextView
+import org.sea9.android.woc.data.TokenAdaptor
 
 class SettingsDialog : DialogFragment() {
 	companion object {
 		const val TAG = "woc.about"
+		private const val PATTERN = "^[a-zA-Z_0-9.-]+[@][a-zA-Z0-9.]+?[.][a-zA-Z]{2,}$"
 
-		fun getInstance(caller: MainContext) : SettingsDialog {
+		fun getInstance() : SettingsDialog {
 			val instance = SettingsDialog()
 			instance.isCancelable = false
-			instance.retainedContext = caller
 			return instance
 		}
 	}
 
-	private lateinit var retainedContext: MainContext
 	private lateinit var radioAlone: RadioButton
 	private lateinit var radioPublisher: RadioButton
 	private lateinit var radioSubscriber: RadioButton
@@ -40,8 +40,8 @@ class SettingsDialog : DialogFragment() {
 				radioSubscriber.isChecked = false
 				textEmail.isEnabled = false
 				buttonEmail.isEnabled = false
-				retainedContext.tokenAdaptor.clearCache()
-				retainedContext.tokenAdaptor.notifyDataSetChanged()
+				callback?.getAdaptor()?.clearCache()
+				callback?.getAdaptor()?.notifyDataSetChanged()
 			}
 		}
 
@@ -52,8 +52,8 @@ class SettingsDialog : DialogFragment() {
 				radioSubscriber.isChecked = false
 				textEmail.isEnabled = false
 				buttonEmail.isEnabled = false
-				retainedContext.tokenAdaptor.populateCache()
-				retainedContext.tokenAdaptor.notifyDataSetChanged()
+				callback?.getAdaptor()?.populateCache()
+				callback?.getAdaptor()?.notifyDataSetChanged()
 			}
 		}
 
@@ -64,8 +64,8 @@ class SettingsDialog : DialogFragment() {
 				radioPublisher.isChecked = false
 				textEmail.isEnabled = true
 				buttonEmail.isEnabled = true
-				retainedContext.tokenAdaptor.clearCache()
-				retainedContext.tokenAdaptor.notifyDataSetChanged()
+				callback?.getAdaptor()?.clearCache()
+				callback?.getAdaptor()?.notifyDataSetChanged()
 			}
 		}
 
@@ -73,7 +73,19 @@ class SettingsDialog : DialogFragment() {
 
 		buttonEmail = layout.findViewById(R.id.subscribes)
 		buttonEmail.setOnClickListener {
-			callback?.subscribes(textEmail.text.toString())
+			val email = textEmail.text
+			val regex = PATTERN.toRegex()
+			if (email.isNotBlank() && (regex matches email)) {
+				callback?.subscribes(
+					when {
+						radioSubscriber.isChecked -> 1
+						radioPublisher.isChecked -> 2
+						else -> 0
+					}, email.toString()
+				)
+			} else {
+				textEmail.text = ""
+			}
 		}
 
 		recycler = layout.findViewById(R.id.subscribers)
@@ -96,12 +108,12 @@ class SettingsDialog : DialogFragment() {
 
 	override fun onResume() {
 		super.onResume()
-		radioAlone.isChecked = !retainedContext.isPublisher() && !retainedContext.isSubscriber()
-		radioPublisher.isChecked = retainedContext.isPublisher()
-		radioSubscriber.isChecked = retainedContext.isSubscriber()
-		recycler.adapter = retainedContext.tokenAdaptor
+		radioAlone.isChecked = !(callback?.isPublisher() ?: false) && !(callback?.isSubscriber() ?: false)
+		radioPublisher.isChecked = callback?.isPublisher() ?: false
+		radioSubscriber.isChecked = callback?.isSubscriber() ?: false
+		recycler.adapter = callback?.getAdaptor()
 
-		if (radioPublisher.isChecked) retainedContext.tokenAdaptor.populateCache()
+		if (radioPublisher.isChecked) callback?.getAdaptor()?.populateCache()
 	}
 
 	private fun close() {
@@ -124,7 +136,10 @@ class SettingsDialog : DialogFragment() {
 	 */
 	interface Callback {
 		fun onSettingChanged(selection: Int, email: String?)
-		fun subscribes(email: String?)
+		fun subscribes(selection: Int, email: String?)
+		fun getAdaptor(): TokenAdaptor
+		fun isPublisher(): Boolean
+		fun isSubscriber(): Boolean
 	}
 	private var callback: Callback? = null
 

@@ -16,7 +16,7 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 
 	private lateinit var recyclerView: RecyclerView
 
-	private var cache: MutableList<String> = mutableListOf()
+	private var cache: MutableList<TokenRecord> = mutableListOf()
 
 	/*=====================================================
 	 * @see android.support.v7.widget.RecyclerView.Adapter
@@ -33,7 +33,8 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 	}
 
 	override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-		holder.token.text = cache[position]
+		holder.subscriber.text = cache[position].subscriber
+		holder.token.text = cache[position].token
 	}
 
 	override fun getItemCount(): Int {
@@ -44,7 +45,7 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 	 * Data access methods.
 	 */
 	fun populateCache() {
-		cache = DbContract.Token.select(caller.getDbHelper()!!) as MutableList<String>
+		cache = DbContract.Token.select(caller.getDbHelper()!!) as MutableList<TokenRecord>
 	}
 
 	fun clearCache() {
@@ -68,6 +69,7 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 	 * View holder
 	 */
 	class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
+		val subscriber: TextView = view.findViewById(R.id.subscriber)
 		val token: TextView = view.findViewById(R.id.token)
 	}
 

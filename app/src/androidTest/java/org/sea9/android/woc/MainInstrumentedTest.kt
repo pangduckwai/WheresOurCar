@@ -22,7 +22,7 @@ import org.sea9.android.woc.data.VehicleRecord
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 @RunWith(AndroidJUnit4::class)
-class ExampleInstrumentedTest {
+class MainInstrumentedTest {
 	companion object {
 		private lateinit var context: Context
 		private lateinit var helper: DbHelper

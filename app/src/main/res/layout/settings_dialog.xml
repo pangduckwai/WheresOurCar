@@ -29,7 +29,7 @@
 				android:layout_marginStart="@dimen/fab_margin"
 				android:layout_marginTop="@dimen/fab_margin"
 				android:layout_gravity="start|top"
-				android:textSize="@dimen/text_large"
+				android:textSize="@dimen/text_title"
 				android:text="@string/label_alone"/>
 	</android.support.v7.widget.CardView>
 
@@ -53,7 +53,7 @@
 				android:layout_marginStart="@dimen/fab_margin"
 				android:layout_marginTop="@dimen/fab_margin"
 				android:layout_gravity="start|top"
-				android:textSize="@dimen/text_large"
+				android:textSize="@dimen/text_title"
 				android:text="@string/label_publisher"/>
 	</android.support.v7.widget.CardView>
 
@@ -72,7 +72,7 @@
 		<android.support.constraint.ConstraintLayout
 				xmlns:app="http://schemas.android.com/apk/res-auto"
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content">
+				android:layout_height="@dimen/app_bar_height">
 			<RadioButton
 					android:id="@+id/radio_subscriber"
 					android:layout_width="wrap_content"
@@ -81,7 +81,7 @@
 					android:layout_marginStart="@dimen/fab_margin"
 					android:layout_marginTop="@dimen/fab_margin"
 					android:layout_gravity="start|top"
-					android:textSize="@dimen/text_large"
+					android:textSize="@dimen/text_title"
 					android:text="@string/label_subscriber"
 					app:layout_constraintStart_toStartOf="parent"
 					app:layout_constraintTop_toTopOf="parent"/>
@@ -91,10 +91,15 @@
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:layout_marginBottom="@dimen/margin_normal"
-					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginEnd="@dimen/margin_normal"
+					android:layout_marginStart="@dimen/margin_normal"
 					android:layout_marginTop="@dimen/margin_normal"
 					android:textSize="@dimen/text_medium"
-					android:inputType="textEmailAddress"
+					android:gravity="top|start"
+					android:lines="2"
+					android:minLines="2"
+					android:maxLines="2"
+					android:inputType="textEmailAddress|textMultiLine"
 					android:imeOptions="actionDone|flagNoExtractUi"
 					android:enabled="false"
 					android:hint="@string/hint_email"
@@ -102,11 +107,28 @@
 					app:layout_constraintStart_toStartOf="parent"
 					app:layout_constraintTop_toBottomOf="@+id/radio_subscriber"/>
 
+			<!--<EditText-->
+					<!--android:id="@+id/text_name"-->
+					<!--android:layout_width="match_parent"-->
+					<!--android:layout_height="wrap_content"-->
+					<!--android:layout_marginBottom="@dimen/margin_normal"-->
+					<!--android:layout_marginEnd="@dimen/margin_normal"-->
+					<!--android:layout_marginStart="@dimen/margin_normal"-->
+					<!--android:layout_marginTop="@dimen/margin_normal"-->
+					<!--android:textSize="@dimen/text_medium"-->
+					<!--android:inputType="textEmailAddress"-->
+					<!--android:imeOptions="actionDone|flagNoExtractUi"-->
+					<!--android:enabled="false"-->
+					<!--android:hint="@string/hint_name"-->
+					<!--app:layout_constraintEnd_toEndOf="parent"-->
+					<!--app:layout_constraintStart_toStartOf="parent"-->
+					<!--app:layout_constraintTop_toBottomOf="@+id/text_email"/>-->
+
 			<ImageButton
 					android:id="@+id/subscribes"
 					android:layout_width="@dimen/text_title"
 					android:layout_height="@dimen/text_title"
-					android:layout_marginEnd="@dimen/margin_narrow"
+					android:layout_marginEnd="@dimen/margin_normal"
 					android:contentDescription="@string/content_email"
 					android:background="?android:attr/selectableItemBackground"
 					android:src="@drawable/icon_mail"
@@ -120,7 +142,8 @@
 			android:id="@+id/card_subscribers"
 			android:layout_gravity="center"
 			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
+			android:layout_height="0dp"
+			android:layout_weight="1"
 			android:minWidth="@dimen/dialog_minWidth"
 			android:layout_marginBottom="@dimen/fab_margin"
 			android:layout_marginEnd="@dimen/fab_margin"
@@ -131,16 +154,18 @@
 		<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginEnd="@dimen/fab_margin"
-				android:layout_marginStart="@dimen/fab_margin"
 				android:orientation="vertical">
 			<TextView
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:layout_margin="@dimen/margin_narrow"
+					android:layout_marginBottom="@dimen/margin_narrow"
+					android:layout_marginEnd="@dimen/fab_margin"
+					android:layout_marginStart="@dimen/fab_margin"
+					android:layout_marginTop="@dimen/margin_narrow"
 					android:layout_gravity="start|top"
 					android:text="@string/label_subscribers"
-					android:textSize="@dimen/text_title"/>
+					android:textSize="@dimen/text_normal"
+					android:textColor="@android:color/black"/>
 			<android.support.v7.widget.RecyclerView
 					android:id="@+id/subscribers"
 					android:layout_width="match_parent"

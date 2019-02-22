@@ -26,7 +26,6 @@ class DbHelper(private val caller: Caller, isTest: Boolean):
 
 	override fun onCreate(db: SQLiteDatabase) {
 		db.execSQL(DbContract.Token.SQL_CREATE)
-		db.execSQL(DbContract.Token.SQL_CREATE_IDX)
 		db.execSQL(DbContract.Parking.SQL_CREATE)
 		db.execSQL(DbContract.Parking.SQL_CREATE_IDX)
 		db.execSQL(DbContract.Vehicle.SQL_CREATE)
@@ -40,7 +39,6 @@ class DbHelper(private val caller: Caller, isTest: Boolean):
 		db.execSQL(DbContract.Vehicle.SQL_DROP)
 		db.execSQL(DbContract.Parking.SQL_DROP_IDX)
 		db.execSQL(DbContract.Parking.SQL_DROP)
-		db.execSQL(DbContract.Token.SQL_DROP_IDX)
 		db.execSQL(DbContract.Token.SQL_DROP)
 		onCreate(db)
 	}
@@ -51,7 +49,6 @@ class DbHelper(private val caller: Caller, isTest: Boolean):
 		writableDatabase.execSQL(DbContract.Vehicle.SQL_DROP)
 		writableDatabase.execSQL(DbContract.Parking.SQL_DROP_IDX)
 		writableDatabase.execSQL(DbContract.Parking.SQL_DROP)
-		writableDatabase.execSQL(DbContract.Token.SQL_DROP_IDX)
 		writableDatabase.execSQL(DbContract.Token.SQL_DROP)
 		caller.getContext()?.deleteDatabase(databaseName)
 		Log.i(TAG, "Database $dbName deleted")

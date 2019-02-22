@@ -2,9 +2,11 @@ package org.sea9.android.woc
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.database.SQLException
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
+import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -13,7 +15,9 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import com.google.firebase.iid.FirebaseInstanceId
 import org.json.JSONObject
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
@@ -312,15 +316,70 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		private set
 
 	fun notifyPublisher(token: String) {
-			val savedToken = activity
-				?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-				?.getString(MainActivity.KEY_TOKEN, null)
+		val savedToken = activity
+			?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+			?.getString(MainActivity.KEY_TOKEN, null)
 		Log.w(TAG, "Notifying publisher of the FCM token changed from $savedToken to $token")
 	}
 
 	fun getActiveNetworkInfo(): NetworkInfo {
 		val connectivityManager = activity?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 		return connectivityManager.activeNetworkInfo
+	}
+
+	fun subscribes(email: String?) {
+		val savedToken = context
+			?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+			?.getString(MainActivity.KEY_TOKEN, null)
+		if (savedToken == null) {
+			AsyncTokenTask(this).execute(email)
+		} else {
+			subscribe(email, savedToken)
+		}
+	}
+	private fun subscribe(email: String?, token: String?) {
+		if (email != null) {
+			val intent = Intent(Intent.ACTION_SENDTO)
+			intent.type = "plain/text"
+			intent.data = Uri.parse("mailto:")
+			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(email))
+			intent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Where's Our Car subscription request")
+			intent.putExtra(android.content.Intent.EXTRA_TEXT,
+				"http://sea9.org/woc/s?t=$token"
+			)
+			startActivity(Intent.createChooser(intent, "Sending subscription request…"))
+		}
+	}
+	private class AsyncTokenTask(private val caller: MainContext): AsyncTask<String, Void, String?>() {
+		@SuppressLint("ApplySharedPref")
+		override fun doInBackground(vararg params: String): String? {
+			FirebaseInstanceId.getInstance().instanceId
+				.addOnCompleteListener(OnCompleteListener { task ->
+					if (!task.isSuccessful) {
+						Log.w(TAG, "getInstanceId failed", task.exception)
+						return@OnCompleteListener
+					}
+
+					task.result?.token.let { token ->
+						caller.context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+							with(it.edit()) {
+								putString(org.sea9.android.woc.MainActivity.KEY_TOKEN, token)
+								commit()
+							}
+						}
+					}
+				})
+			return if (params.isNotEmpty()) params[0] else null
+		}
+
+		override fun onPostExecute(result: String?) {
+			caller.activity?.runOnUiThread {
+				val savedToken = caller.context
+					?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
+					?.getString(MainActivity.KEY_TOKEN, null)
+				caller.subscribe(result, savedToken)
+			}
+		}
 	}
 
 	fun publish() {
@@ -337,7 +396,7 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		val messages = Array<JSONObject?>(tokens.size) { null }
 		tokens.forEachIndexed { index, token ->
 			val body = JSONObject()
-			body.put(JSON_TOKEN, token)
+			body.put(JSON_TOKEN, token.token)
 			body.put(JSON_DATA, data)
 			JSONObject().put(JSON_MESSAGE, body).also {
 				Log.w(TAG, "Publishing message $it...")
@@ -421,14 +480,13 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 			val projectId = caller.getString(R.string.firebase_project_id)
 			val url = URL(caller.getString(R.string.firebase_endpoint_fcm, projectId))
 			val pattern = caller.getString(R.string.firebase_succeed_fcm).toRegex()
-			val result = Array<String?>(params.size) { null }
-			params.forEachIndexed { index, param ->
-				if (isCancelled) return@forEachIndexed
+			params.forEach { param ->
+				if (isCancelled) return@forEach
 
 				// TODO TEMP - for debug
 				if (param?.getJSONObject(JSON_MESSAGE)?.getString(JSON_TOKEN)?.startsWith("0000000")!!) {
-					result[index] = "Testing token starting with '0000000' found $index"
-					return@forEachIndexed
+					Log.w(TAG, "Testing token starting with '0000000' found, ignoring...")
+					return@forEach
 				}
 
 				var count = 1

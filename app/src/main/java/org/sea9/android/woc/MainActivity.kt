@@ -18,6 +18,7 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
 import org.sea9.android.woc.data.DbContract
+import org.sea9.android.woc.data.TokenAdaptor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -227,7 +228,7 @@ class MainActivity : AppCompatActivity(), Observer
 		// as you specify a parent activity in AndroidManifest.xml.
 		return when (item.itemId) {
 			R.id.action_settings -> {
-				SettingsDialog.getInstance(retainedContext).show(supportFragmentManager, SettingsDialog.TAG)
+				SettingsDialog.getInstance().show(supportFragmentManager, SettingsDialog.TAG)
 				true
 			}
 			R.id.action_about -> {
@@ -365,10 +366,22 @@ class MainActivity : AppCompatActivity(), Observer
 		MainContext.updateSetting(this, selection, email)
 	}
 
-	override fun subscribes(email: String?) {
-		Log.w(TAG, "Sending subscription request to $email...")
-		// TODO send email here!!!
-		MainContext.updateSetting(this, -1, email)
+	override fun subscribes(selection: Int, email: String?) {
+		retainedContext.setMode(selection)
+		retainedContext.subscribes(email)
+		MainContext.updateSetting(this, selection, email)
+	}
+
+	override fun getAdaptor(): TokenAdaptor {
+		return retainedContext.tokenAdaptor
+	}
+
+	override fun isPublisher(): Boolean {
+		return retainedContext.isPublisher()
+	}
+
+	override fun isSubscriber(): Boolean {
+		return retainedContext.isSubscriber()
 	}
 
 	/*=================================================
