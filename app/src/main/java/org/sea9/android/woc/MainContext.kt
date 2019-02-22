@@ -410,22 +410,17 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 			}
 		}
 
-		private lateinit var projectId: String
-		private lateinit var pattern: Regex
-
 		override fun onPreExecute() {
 			if (!caller.getActiveNetworkInfo().isConnected)
 				cancel(true)
-			else {
-				projectId = caller.getString(R.string.firebase_project_id)
-				pattern = caller.getString(R.string.firebase_succeed_fcm).toRegex()
-			}
 		}
 
 		override fun doInBackground(vararg params: JSONObject?): Void? {
 			if (params.isEmpty()) return null
 
+			val projectId = caller.getString(R.string.firebase_project_id)
 			val url = URL(caller.getString(R.string.firebase_endpoint_fcm, projectId))
+			val pattern = caller.getString(R.string.firebase_succeed_fcm).toRegex()
 			val result = Array<String?>(params.size) { null }
 			params.forEachIndexed { index, param ->
 				if (isCancelled) return@forEachIndexed
