@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity(), Observer
 		const val KEY_MODE = "woc.mode"
 		const val KEY_TOKEN = "woc.token"
 		const val KEY_PUB = "woc.publication"
+		const val KEY_SUB = "woc.subscription"
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -360,16 +361,16 @@ class MainActivity : AppCompatActivity(), Observer
 	/*==================================================
 	 * @see org.sea9.android.ui.SettingsDialog.Callback
 	 */
-	override fun onSettingChanged(selection: Int, email: String?) {
+	override fun onSettingChanged(selection: Int, email: String?, subscriber: String?) {
 		retainedContext.setMode(selection)
 		retainedContext.publish()
-		MainContext.updateSetting(this, selection, email)
+		MainContext.updateSetting(this, selection, email, subscriber)
 	}
 
-	override fun subscribes(selection: Int, email: String?) {
+	override fun subscribes(selection: Int, email: String?, subscriber: String?) {
 		retainedContext.setMode(selection)
-		retainedContext.subscribes(email)
-		MainContext.updateSetting(this, selection, email)
+		retainedContext.subscribes(email, subscriber)
+		MainContext.updateSetting(this, selection, email, subscriber)
 	}
 
 	override fun getAdaptor(): TokenAdaptor {

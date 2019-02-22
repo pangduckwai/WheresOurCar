@@ -67,13 +67,14 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		}
 
 		@SuppressLint("ApplySharedPref")
-		fun updateSetting(context: Context?, selection: Int, email: String?) {
+		fun updateSetting(context: Context?, selection: Int, email: String?, subscriber: String?) {
 			context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
 				with(it.edit()) {
 					if (selection >= 0) {
 						putInt(MainActivity.KEY_MODE, selection)
 					} // < 0 means ignore
-					if (email != null) putString(MainActivity.KEY_PUB, email) // null means ignore
+					if (email != null) putString(MainActivity.KEY_PUB, email)
+					if (subscriber != null) putString(MainActivity.KEY_SUB, subscriber)
 					commit()
 				}
 			}
@@ -327,17 +328,17 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		return connectivityManager.activeNetworkInfo
 	}
 
-	fun subscribes(email: String?) {
+	fun subscribes(email: String?, subscriber: String?) {
 		val savedToken = context
 			?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
 			?.getString(MainActivity.KEY_TOKEN, null)
 		if (savedToken == null) {
-			AsyncTokenTask(this).execute(email)
+			AsyncTokenTask(this).execute(email, subscriber)
 		} else {
-			subscribe(email, savedToken)
+			subscribe(email, subscriber, savedToken)
 		}
 	}
-	private fun subscribe(email: String?, token: String?) {
+	private fun subscribe(email: String?, subscriber: String?, token: String?) {
 		if (email != null) {
 			val intent = Intent(Intent.ACTION_SENDTO)
 			intent.type = "plain/text"
@@ -345,14 +346,14 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(email))
 			intent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Where's Our Car subscription request")
 			intent.putExtra(android.content.Intent.EXTRA_TEXT,
-				"http://sea9.org/woc/s?t=$token"
+				"http://sea9.org/woc/s?t=$token&s=${subscriber ?: MainActivity.EMPTY}"
 			)
 			startActivity(Intent.createChooser(intent, "Sending subscription request…"))
 		}
 	}
-	private class AsyncTokenTask(private val caller: MainContext): AsyncTask<String, Void, String?>() {
+	private class AsyncTokenTask(private val caller: MainContext): AsyncTask<String, Void, Array<String>?>() {
 		@SuppressLint("ApplySharedPref")
-		override fun doInBackground(vararg params: String): String? {
+		override fun doInBackground(vararg params: String): Array<String>? {
 			FirebaseInstanceId.getInstance().instanceId
 				.addOnCompleteListener(OnCompleteListener { task ->
 					if (!task.isSuccessful) {
@@ -369,15 +370,15 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 						}
 					}
 				})
-			return if (params.isNotEmpty()) params[0] else null
+			return if (params.isNotEmpty()) arrayOf(*params) else null
 		}
 
-		override fun onPostExecute(result: String?) {
+		override fun onPostExecute(result: Array<String>?) {
 			caller.activity?.runOnUiThread {
 				val savedToken = caller.context
 					?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
 					?.getString(MainActivity.KEY_TOKEN, null)
-				caller.subscribe(result, savedToken)
+				caller.subscribe(result!![0], result[1], savedToken)
 			}
 		}
 	}

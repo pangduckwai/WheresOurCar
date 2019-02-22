@@ -25,9 +25,8 @@
 				android:id="@+id/radio_alone"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_marginBottom="@dimen/margin_normal"
-				android:layout_marginStart="@dimen/fab_margin"
-				android:layout_marginTop="@dimen/fab_margin"
+				android:layout_marginBottom="@dimen/margin_narrow"
+				android:layout_marginTop="@dimen/margin_narrow"
 				android:layout_gravity="start|top"
 				android:textSize="@dimen/text_title"
 				android:text="@string/label_alone"/>
@@ -49,9 +48,8 @@
 				android:id="@+id/radio_publisher"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:layout_marginBottom="@dimen/margin_normal"
-				android:layout_marginStart="@dimen/fab_margin"
-				android:layout_marginTop="@dimen/fab_margin"
+				android:layout_marginBottom="@dimen/margin_narrow"
+				android:layout_marginTop="@dimen/margin_narrow"
 				android:layout_gravity="start|top"
 				android:textSize="@dimen/text_title"
 				android:text="@string/label_publisher"/>
@@ -69,31 +67,25 @@
 			android:layout_marginTop="@dimen/margin_narrow"
 			card_view:cardCornerRadius="@dimen/margin_narrow"
 			card_view:cardBackgroundColor="@color/colorCard">
-		<android.support.constraint.ConstraintLayout
-				xmlns:app="http://schemas.android.com/apk/res-auto"
+		<LinearLayout
 				android:layout_width="match_parent"
-				android:layout_height="@dimen/app_bar_height">
+				android:layout_height="wrap_content"
+				android:orientation="vertical">
 			<RadioButton
 					android:id="@+id/radio_subscriber"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:layout_marginBottom="@dimen/margin_normal"
-					android:layout_marginStart="@dimen/fab_margin"
-					android:layout_marginTop="@dimen/fab_margin"
+					android:layout_marginBottom="@dimen/margin_narrow"
+					android:layout_marginTop="@dimen/margin_narrow"
 					android:layout_gravity="start|top"
 					android:textSize="@dimen/text_title"
-					android:text="@string/label_subscriber"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toTopOf="parent"/>
-
+					android:text="@string/label_subscriber"/>
 			<EditText
 					android:id="@+id/text_email"
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:layout_marginBottom="@dimen/margin_normal"
-					android:layout_marginEnd="@dimen/margin_normal"
-					android:layout_marginStart="@dimen/margin_normal"
-					android:layout_marginTop="@dimen/margin_normal"
+					android:layout_marginBottom="@dimen/margin_narrow"
+					android:layout_marginTop="@dimen/margin_narrow"
 					android:textSize="@dimen/text_medium"
 					android:gravity="top|start"
 					android:lines="2"
@@ -101,41 +93,34 @@
 					android:maxLines="2"
 					android:inputType="textEmailAddress|textMultiLine"
 					android:imeOptions="actionDone|flagNoExtractUi"
-					android:enabled="false"
-					android:hint="@string/hint_email"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@+id/radio_subscriber"/>
-
-			<!--<EditText-->
-					<!--android:id="@+id/text_name"-->
-					<!--android:layout_width="match_parent"-->
-					<!--android:layout_height="wrap_content"-->
-					<!--android:layout_marginBottom="@dimen/margin_normal"-->
-					<!--android:layout_marginEnd="@dimen/margin_normal"-->
-					<!--android:layout_marginStart="@dimen/margin_normal"-->
-					<!--android:layout_marginTop="@dimen/margin_normal"-->
-					<!--android:textSize="@dimen/text_medium"-->
-					<!--android:inputType="textEmailAddress"-->
-					<!--android:imeOptions="actionDone|flagNoExtractUi"-->
-					<!--android:enabled="false"-->
-					<!--android:hint="@string/hint_name"-->
-					<!--app:layout_constraintEnd_toEndOf="parent"-->
-					<!--app:layout_constraintStart_toStartOf="parent"-->
-					<!--app:layout_constraintTop_toBottomOf="@+id/text_email"/>-->
-
-			<ImageButton
-					android:id="@+id/subscribes"
-					android:layout_width="@dimen/text_title"
-					android:layout_height="@dimen/text_title"
-					android:layout_marginEnd="@dimen/margin_normal"
-					android:contentDescription="@string/content_email"
-					android:background="?android:attr/selectableItemBackground"
-					android:src="@drawable/icon_mail"
-					app:layout_constraintBottom_toBottomOf="@+id/text_email"
-					app:layout_constraintEnd_toEndOf="@+id/text_email"
-					app:layout_constraintTop_toTopOf="@+id/text_email"/>
-		</android.support.constraint.ConstraintLayout>
+					android:hint="@string/hint_email"/>
+			<LinearLayout
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:orientation="horizontal">
+				<EditText
+						android:id="@+id/text_name"
+						android:layout_width="0dp"
+						android:layout_height="wrap_content"
+						android:layout_weight="1"
+						android:layout_marginBottom="@dimen/margin_narrow"
+						android:layout_marginTop="@dimen/margin_narrow"
+						android:textSize="@dimen/text_medium"
+						android:inputType="textEmailAddress"
+						android:imeOptions="actionDone|flagNoExtractUi"
+						android:hint="@string/hint_name"/>
+				<ImageButton
+						android:id="@+id/subscribes"
+						android:layout_width="@dimen/text_title"
+						android:layout_height="@dimen/text_title"
+						android:layout_marginBottom="@dimen/margin_narrow"
+						android:layout_marginEnd="@dimen/margin_normal"
+						android:layout_marginTop="@dimen/margin_normal"
+						android:contentDescription="@string/content_email"
+						android:background="?android:attr/selectableItemBackground"
+						android:src="@drawable/icon_mail"/>
+			</LinearLayout>
+		</LinearLayout>
 	</android.support.v7.widget.CardView>
 
 	<android.support.v7.widget.CardView
@@ -159,8 +144,6 @@
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
 					android:layout_marginBottom="@dimen/margin_narrow"
-					android:layout_marginEnd="@dimen/fab_margin"
-					android:layout_marginStart="@dimen/fab_margin"
 					android:layout_marginTop="@dimen/margin_narrow"
 					android:layout_gravity="start|top"
 					android:text="@string/label_subscribers"

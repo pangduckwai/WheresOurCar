@@ -14,6 +14,7 @@ import org.sea9.android.woc.data.TokenAdaptor
 class SettingsDialog : DialogFragment() {
 	companion object {
 		const val TAG = "woc.about"
+		private const val EMPTY = ""
 		private const val PATTERN = "^[a-zA-Z_0-9.-]+[@][a-zA-Z0-9.]+?[.][a-zA-Z]{2,}$"
 
 		fun getInstance() : SettingsDialog {
@@ -27,6 +28,7 @@ class SettingsDialog : DialogFragment() {
 	private lateinit var radioPublisher: RadioButton
 	private lateinit var radioSubscriber: RadioButton
 	private lateinit var textEmail: TextView
+	private lateinit var textSubscriber: TextView
 	private lateinit var buttonEmail: ImageButton
 	private lateinit var recycler: RecyclerView
 
@@ -39,6 +41,9 @@ class SettingsDialog : DialogFragment() {
 				radioPublisher.isChecked = false
 				radioSubscriber.isChecked = false
 				textEmail.isEnabled = false
+				textSubscriber.isEnabled = false
+				textEmail.text = EMPTY
+				textSubscriber.text = EMPTY
 				buttonEmail.isEnabled = false
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
@@ -51,6 +56,9 @@ class SettingsDialog : DialogFragment() {
 				radioAlone.isChecked = false
 				radioSubscriber.isChecked = false
 				textEmail.isEnabled = false
+				textSubscriber.isEnabled = false
+				textEmail.text = EMPTY
+				textSubscriber.text = EMPTY
 				buttonEmail.isEnabled = false
 				callback?.getAdaptor()?.populateCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
@@ -63,17 +71,21 @@ class SettingsDialog : DialogFragment() {
 				radioAlone.isChecked = false
 				radioPublisher.isChecked = false
 				textEmail.isEnabled = true
+				textSubscriber.isEnabled = true
 				buttonEmail.isEnabled = true
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
+				populateSubscriber()
 			}
 		}
 
 		textEmail = layout.findViewById(R.id.text_email)
+		textSubscriber = layout.findViewById(R.id.text_name)
 
 		buttonEmail = layout.findViewById(R.id.subscribes)
 		buttonEmail.setOnClickListener {
 			val email = textEmail.text
+			val name = textSubscriber.text
 			val regex = PATTERN.toRegex()
 			if (email.isNotBlank() && (regex matches email)) {
 				callback?.subscribes(
@@ -81,9 +93,10 @@ class SettingsDialog : DialogFragment() {
 						radioSubscriber.isChecked -> 1
 						radioPublisher.isChecked -> 2
 						else -> 0
-					}, email.toString()
+					}, email.toString(), name?.toString()
 				)
 			} else {
+				callback?.doNotify(getString(R.string.msg_pub_email_empty))
 				textEmail.text = ""
 			}
 		}
@@ -113,7 +126,10 @@ class SettingsDialog : DialogFragment() {
 		radioSubscriber.isChecked = callback?.isSubscriber() ?: false
 		recycler.adapter = callback?.getAdaptor()
 
-		if (radioPublisher.isChecked) callback?.getAdaptor()?.populateCache()
+		if (radioPublisher.isChecked)
+			callback?.getAdaptor()?.populateCache()
+		else if (radioSubscriber.isChecked)
+			populateSubscriber() //TODO HERE should not reset when phone change orientation
 	}
 
 	private fun close() {
@@ -126,20 +142,32 @@ class SettingsDialog : DialogFragment() {
 			if (radioSubscriber.isChecked)
 				textEmail.text.toString()
 			else
+				null,
+			if (radioSubscriber.isChecked)
+				textSubscriber.text.toString()
+			else
 				null
 		)
 		dismiss()
+	}
+
+	private fun populateSubscriber() {
+		context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
+			textEmail.text = it.getString(MainActivity.KEY_PUB, EMPTY)
+			textSubscriber.text = it.getString(MainActivity.KEY_SUB, EMPTY)
+		}
 	}
 
 	/*========================================
 	 * Callback interface to the MainActivity
 	 */
 	interface Callback {
-		fun onSettingChanged(selection: Int, email: String?)
-		fun subscribes(selection: Int, email: String?)
+		fun onSettingChanged(selection: Int, email: String?, subscriber: String?)
+		fun subscribes(selection: Int, email: String?, subscriber: String?)
 		fun getAdaptor(): TokenAdaptor
 		fun isPublisher(): Boolean
 		fun isSubscriber(): Boolean
+		fun doNotify(msg: String?)
 	}
 	private var callback: Callback? = null
 
