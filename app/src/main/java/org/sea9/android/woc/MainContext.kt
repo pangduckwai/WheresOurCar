@@ -13,8 +13,6 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.util.Log
 import android.widget.ArrayAdapter
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.firebase.iid.FirebaseInstanceId
@@ -48,36 +46,6 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 				sfm.beginTransaction().add(instance, TAG).commit()
 			}
 			return instance
-		}
-
-		fun getOperationMode(context: Context?): MODE {
-			return if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS) {
-				context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
-					when (it.getInt(MainActivity.KEY_MODE, 0)) {
-						0 -> MODE.STANDALONE
-						1 -> MODE.SUBSCRIBER
-						2 -> MODE.PUBLISHER
-						else -> null
-					}
-				} ?: MODE.STANDALONE // default
-			} else {
-				Log.i(TAG, "Google Play NOT available")
-				MODE.UNCONNECTED
-			}
-		}
-
-		@SuppressLint("ApplySharedPref")
-		fun updateSetting(context: Context?, selection: Int, email: String?, subscriber: String?) {
-			context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
-				with(it.edit()) {
-					if (selection >= 0) {
-						putInt(MainActivity.KEY_MODE, selection)
-					} // < 0 means ignore
-					if (email != null) putString(MainActivity.KEY_PUB, email)
-					if (subscriber != null) putString(MainActivity.KEY_SUB, subscriber)
-					commit()
-				}
-			}
 		}
 
 		fun getPlayAccessToken(context: Context?): String? {
@@ -137,6 +105,8 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 	/*======================
 	 * Main UI interactions
 	 */
+	val settingsManager = SettingsManager(context)
+
 	private var status = STATUS_NORMAL
 	fun isUpdated(): Boolean {
 		return (status > 0)
@@ -291,37 +261,8 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		populateCurrent(current, false)
 	}
 
-	/*==========================
-	 * Firebase Cloud Messaging
-	 */
-	enum class MODE {
-		STANDALONE, PUBLISHER, SUBSCRIBER, UNCONNECTED
-	}
-
-	private lateinit var operationMode: MODE
-	fun isSubscriber(): Boolean {
-		return (operationMode == MODE.SUBSCRIBER)
-	}
-	fun isPublisher(): Boolean {
-		return (operationMode == MODE.PUBLISHER)
-	}
-	fun setMode(mode: Int) {
-		operationMode = when(mode) {
-			1 -> MODE.SUBSCRIBER
-			2 -> MODE.PUBLISHER
-			else -> MODE.STANDALONE
-		}
-	}
-
 	lateinit var tokenAdaptor: TokenAdaptor
 		private set
-
-	fun notifyPublisher(token: String) {
-		val savedToken = activity
-			?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-			?.getString(MainActivity.KEY_TOKEN, null)
-		Log.w(TAG, "Notifying publisher of the FCM token changed from $savedToken to $token")
-	}
 
 	fun getActiveNetworkInfo(): NetworkInfo {
 		val connectivityManager = activity?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -329,13 +270,10 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 	}
 
 	fun subscribes(email: String?, subscriber: String?) {
-		val savedToken = context
-			?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-			?.getString(MainActivity.KEY_TOKEN, null)
-		if (savedToken == null) {
+		if (settingsManager.deviceToken == null) { // No token yet, obtaining one...
 			AsyncTokenTask(this).execute(email, subscriber)
 		} else {
-			subscribe(email, subscriber, savedToken)
+			subscribe(email, subscriber, settingsManager.deviceToken)
 		}
 	}
 	private fun subscribe(email: String?, subscriber: String?, token: String?) {
@@ -362,29 +300,23 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 					}
 
 					task.result?.token.let { token ->
-						caller.context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
-							with(it.edit()) {
-								putString(org.sea9.android.woc.MainActivity.KEY_TOKEN, token)
-								commit()
-							}
-						}
+						if (token != null) caller.settingsManager.updateToken(token)
 					}
 				})
 			return if (params.isNotEmpty()) arrayOf(*params) else null
 		}
 
 		override fun onPostExecute(result: Array<String>?) {
-			caller.activity?.runOnUiThread {
-				val savedToken = caller.context
-					?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)
-					?.getString(MainActivity.KEY_TOKEN, null)
-				caller.subscribe(result!![0], result[1], savedToken)
+			if (result != null) {
+				caller.activity?.runOnUiThread {
+					caller.subscribe(result[0], result[1], caller.settingsManager.deviceToken)
+				}
 			}
 		}
 	}
 
 	fun publish() {
-		if (!isPublisher()) return
+		if (!settingsManager.isPublisher()) return
 
 		val data = JSONObject()
 		data.put(VehicleRecord.NAM, currentVehicle.name)
@@ -554,10 +486,6 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
-
-		operationMode = getOperationMode(activity)
-		Log.w(TAG, "Operation mode $operationMode")
-
 		tokenAdaptor = TokenAdaptor(this)
 	}
 

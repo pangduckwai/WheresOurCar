@@ -75,7 +75,7 @@ class SettingsDialog : DialogFragment() {
 				buttonEmail.isEnabled = true
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
-				populateSubscriber()
+//				populateSubscriber()
 			}
 		}
 
@@ -88,16 +88,10 @@ class SettingsDialog : DialogFragment() {
 			val name = textSubscriber.text
 			val regex = PATTERN.toRegex()
 			if (email.isNotBlank() && (regex matches email)) {
-				callback?.subscribes(
-					when {
-						radioSubscriber.isChecked -> 1
-						radioPublisher.isChecked -> 2
-						else -> 0
-					}, email.toString(), name?.toString()
-				)
+				callback?.subscribes(SettingsManager.MODE.SUBSCRIBER, email.toString(), name?.toString())
 			} else {
 				callback?.doNotify(getString(R.string.msg_pub_email_empty))
-				textEmail.text = ""
+				textEmail.text = EMPTY
 			}
 		}
 
@@ -128,42 +122,27 @@ class SettingsDialog : DialogFragment() {
 
 		if (radioPublisher.isChecked)
 			callback?.getAdaptor()?.populateCache()
-		else if (radioSubscriber.isChecked)
-			populateSubscriber() //TODO HERE should not reset when phone change orientation
+//		else if (radioSubscriber.isChecked)
+//			populateSubscriber() //TODO HERE should not reset when phone change orientation
 	}
 
 	private fun close() {
-		callback?.onSettingChanged(
+		callback?.onModeChanged(
 			when {
-				radioSubscriber.isChecked -> 1
-				radioPublisher.isChecked -> 2
-				else -> 0
-			},
-			if (radioSubscriber.isChecked)
-				textEmail.text.toString()
-			else
-				null,
-			if (radioSubscriber.isChecked)
-				textSubscriber.text.toString()
-			else
-				null
+				radioSubscriber.isChecked -> SettingsManager.MODE.SUBSCRIBER
+				radioPublisher.isChecked -> SettingsManager.MODE.PUBLISHER
+				else -> SettingsManager.MODE.STANDALONE
+			}
 		)
 		dismiss()
-	}
-
-	private fun populateSubscriber() {
-		context?.getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
-			textEmail.text = it.getString(MainActivity.KEY_PUB, EMPTY)
-			textSubscriber.text = it.getString(MainActivity.KEY_SUB, EMPTY)
-		}
 	}
 
 	/*========================================
 	 * Callback interface to the MainActivity
 	 */
 	interface Callback {
-		fun onSettingChanged(selection: Int, email: String?, subscriber: String?)
-		fun subscribes(selection: Int, email: String?, subscriber: String?)
+		fun onModeChanged(mode: SettingsManager.MODE)
+		fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?)
 		fun getAdaptor(): TokenAdaptor
 		fun isPublisher(): Boolean
 		fun isSubscriber(): Boolean

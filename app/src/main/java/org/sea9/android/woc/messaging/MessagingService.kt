@@ -8,6 +8,7 @@ import com.google.firebase.messaging.RemoteMessage
 import org.sea9.android.woc.MainActivity
 import org.sea9.android.woc.MainWidget
 import org.sea9.android.woc.MainContext
+import org.sea9.android.woc.SettingsManager
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.VehicleRecord
@@ -18,6 +19,8 @@ class MessagingService: FirebaseMessagingService() {
 		const val TAG = "woc.fcm"
 	}
 
+	val settingsManager = SettingsManager(this)
+
 	/**
 	 * Called if InstanceID token is updated. This may occur if the security of
 	 * the previous token had been compromised. Note that this is called when the InstanceID token
@@ -27,21 +30,21 @@ class MessagingService: FirebaseMessagingService() {
 		// Save the refreshed token
 		getSharedPreferences(MainActivity.TAG, Context.MODE_PRIVATE)?.let {
 			with(it.edit()) {
-				putString(MainActivity.KEY_TOKEN, token)
+				putString(SettingsManager.KEY_TOKEN, token)
 				apply()
 			}
 		}
 
 		// Need to update main activity only if the app is active
 		Intent(this, MainActivity.MessagingReceiver::class.java).also {
-			it.putExtra(MainActivity.KEY_TOKEN, token)
+			it.putExtra(SettingsManager.KEY_TOKEN, token)
 			sendBroadcast(it)
 		}
 	}
 
 	override fun onMessageReceived(remoteMessage: RemoteMessage?) {
-		when(MainContext.getOperationMode(this)) {
-			MainContext.MODE.SUBSCRIBER -> {
+		when(settingsManager.operationMode) {
+			SettingsManager.MODE.SUBSCRIBER -> {
 				remoteMessage?.notification?.let {
 					Log.w(TAG, "Invalid message with notification body received: ${it.body}")
 					return
@@ -99,7 +102,7 @@ class MessagingService: FirebaseMessagingService() {
 
 		// Update main activity if the app is active
 		Intent(this, MainActivity.MessagingReceiver::class.java).also {
-			it.putExtra(MainActivity.KEY_PUB, result)
+			it.putExtra(SettingsManager.KEY_PUB, result)
 			sendBroadcast(it)
 		}
 	}

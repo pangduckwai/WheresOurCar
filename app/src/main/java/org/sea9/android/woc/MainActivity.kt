@@ -17,7 +17,6 @@ import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
-import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.TokenAdaptor
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,10 +29,6 @@ class MainActivity : AppCompatActivity(), Observer
 		const val MSG_DIALOG_NOTIFY  = 90001
 		const val MSG_DIALOG_NEW_VEHICLE = 90002
 		const val MSG_DIALOG_PENDING_UPDATE = 90003
-		const val KEY_MODE = "woc.mode"
-		const val KEY_TOKEN = "woc.token"
-		const val KEY_PUB = "woc.publication"
-		const val KEY_SUB = "woc.subscription"
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -192,7 +187,7 @@ class MainActivity : AppCompatActivity(), Observer
 	override fun onResume() {
 		super.onResume()
 
-		if (retainedContext.isSubscriber()) {
+		if (retainedContext.settingsManager.isSubscriber()) {
 			fab.isEnabled = false
 			buttonVehicle.isEnabled = false
 			buttonParking.isEnabled = false
@@ -295,7 +290,7 @@ class MainActivity : AppCompatActivity(), Observer
 			clearKeyboard(view)
 		}
 
-		if (retainedContext.isSubscriber()) {
+		if (retainedContext.settingsManager.isSubscriber()) {
 			textFloor.filters = arrayOf()
 			textLot.filters = arrayOf()
 			textVehicle.filters = arrayOf()
@@ -314,7 +309,7 @@ class MainActivity : AppCompatActivity(), Observer
 				Date())
 		)
 
-		if (retainedContext.isSubscriber()) {
+		if (retainedContext.settingsManager.isSubscriber()) {
 			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
 			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
 			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
@@ -361,16 +356,14 @@ class MainActivity : AppCompatActivity(), Observer
 	/*==================================================
 	 * @see org.sea9.android.ui.SettingsDialog.Callback
 	 */
-	override fun onSettingChanged(selection: Int, email: String?, subscriber: String?) {
-		retainedContext.setMode(selection)
+	override fun onModeChanged(mode: SettingsManager.MODE) {
 		retainedContext.publish()
-		MainContext.updateSetting(this, selection, email, subscriber)
+		retainedContext.settingsManager.updateMode(mode)
 	}
 
-	override fun subscribes(selection: Int, email: String?, subscriber: String?) {
-		retainedContext.setMode(selection)
+	override fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?) {
 		retainedContext.subscribes(email, subscriber)
-		MainContext.updateSetting(this, selection, email, subscriber)
+		retainedContext.settingsManager.makeSubscription(email!! ,subscriber)
 	}
 
 	override fun getAdaptor(): TokenAdaptor {
@@ -378,11 +371,11 @@ class MainActivity : AppCompatActivity(), Observer
 	}
 
 	override fun isPublisher(): Boolean {
-		return retainedContext.isPublisher()
+		return retainedContext.settingsManager.isPublisher()
 	}
 
 	override fun isSubscriber(): Boolean {
-		return retainedContext.isSubscriber()
+		return retainedContext.settingsManager.isSubscriber()
 	}
 
 	/*=================================================
@@ -445,8 +438,8 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun update(o: Observable?, arg: Any?) {
 		(if (arg is Intent?) (arg as Intent) else null)?.let {
-			if (it.hasExtra(KEY_PUB)) {
-				val result = it.getIntExtra(KEY_PUB, -1)
+			if (it.hasExtra(SettingsManager.KEY_PUB)) {
+				val result = it.getIntExtra(SettingsManager.KEY_PUB, -1)
 				when {
 					(result < 0) -> {
 						doNotify(getString(R.string.msg_sub_error, result))
@@ -473,8 +466,8 @@ class MainActivity : AppCompatActivity(), Observer
 						}
 					}
 				}
-			} else if (it.hasExtra(KEY_TOKEN)) {
-				retainedContext.notifyPublisher(it.getStringExtra(KEY_TOKEN))
+			} else if (it.hasExtra(SettingsManager.KEY_TOKEN)) {
+				retainedContext.settingsManager.notifyPublisher(it.getStringExtra(SettingsManager.KEY_TOKEN))
 			}
 		}
 	}
