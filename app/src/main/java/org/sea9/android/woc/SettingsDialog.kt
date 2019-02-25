@@ -6,6 +6,7 @@ import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.*
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
 import android.widget.RadioButton
 import android.widget.TextView
@@ -14,7 +15,6 @@ import org.sea9.android.woc.data.TokenAdaptor
 class SettingsDialog : DialogFragment() {
 	companion object {
 		const val TAG = "woc.about"
-		private const val EMPTY = ""
 		private const val PATTERN = "^[a-zA-Z_0-9.-]+[@][a-zA-Z0-9.]+?[.][a-zA-Z]{2,}$"
 
 		fun getInstance() : SettingsDialog {
@@ -38,49 +38,67 @@ class SettingsDialog : DialogFragment() {
 		radioAlone = layout.findViewById(R.id.radio_alone)
 		radioAlone.setOnCheckedChangeListener { _, isChecked ->
 			if (isChecked) {
-				radioPublisher.isChecked = false
-				radioSubscriber.isChecked = false
-				textEmail.isEnabled = false
-				textSubscriber.isEnabled = false
-				textEmail.text = EMPTY
-				textSubscriber.text = EMPTY
-				buttonEmail.isEnabled = false
+				updateUi(SettingsManager.MODE.STANDALONE)
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
+				textEmail.text = MainActivity.EMPTY
+				textSubscriber.text = MainActivity.EMPTY
 			}
 		}
 
 		radioPublisher = layout.findViewById(R.id.radio_publisher)
 		radioPublisher.setOnCheckedChangeListener { _, isChecked ->
 			if (isChecked) {
-				radioAlone.isChecked = false
-				radioSubscriber.isChecked = false
-				textEmail.isEnabled = false
-				textSubscriber.isEnabled = false
-				textEmail.text = EMPTY
-				textSubscriber.text = EMPTY
-				buttonEmail.isEnabled = false
+				updateUi(SettingsManager.MODE.PUBLISHER)
 				callback?.getAdaptor()?.populateCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
+				textEmail.text = MainActivity.EMPTY
+				textSubscriber.text = MainActivity.EMPTY
 			}
 		}
 
 		radioSubscriber = layout.findViewById(R.id.radio_subscriber)
 		radioSubscriber.setOnCheckedChangeListener { _, isChecked ->
 			if (isChecked) {
-				radioAlone.isChecked = false
-				radioPublisher.isChecked = false
-				textEmail.isEnabled = true
-				textSubscriber.isEnabled = true
-				buttonEmail.isEnabled = true
+				updateUi(SettingsManager.MODE.SUBSCRIBER)
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
-//				populateSubscriber()
+				textEmail.text = callback?.getSettingsManager()?.publisherEmail
+				textSubscriber.text = callback?.getSettingsManager()?.subscriberName
 			}
 		}
 
 		textEmail = layout.findViewById(R.id.text_email)
+		textEmail.setOnEditorActionListener { _, actionId, _ ->
+			when (actionId) {
+				EditorInfo.IME_ACTION_NEXT -> {
+					callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
+				}
+			}
+			false
+		}
+		textEmail.setOnFocusChangeListener { view, hasFocus ->
+			if (!hasFocus) {
+				callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
+				view.clearFocus()
+			}
+		}
+
 		textSubscriber = layout.findViewById(R.id.text_name)
+		textSubscriber.setOnEditorActionListener { _, actionId, _ ->
+			when (actionId) {
+				EditorInfo.IME_ACTION_NEXT -> {
+					callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+				}
+			}
+			false
+		}
+		textSubscriber.setOnFocusChangeListener { view, hasFocus ->
+			if (!hasFocus) {
+				callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+				view.clearFocus()
+			}
+		}
 
 		buttonEmail = layout.findViewById(R.id.subscribes)
 		buttonEmail.setOnClickListener {
@@ -90,8 +108,8 @@ class SettingsDialog : DialogFragment() {
 			if (email.isNotBlank() && (regex matches email)) {
 				callback?.subscribes(SettingsManager.MODE.SUBSCRIBER, email.toString(), name?.toString())
 			} else {
-				callback?.doNotify(getString(R.string.msg_pub_email_empty))
-				textEmail.text = EMPTY
+				callback?.doNotify(getString(R.string.msg_pub_email_invalid))
+				textEmail.text = MainActivity.EMPTY
 			}
 		}
 
@@ -115,18 +133,21 @@ class SettingsDialog : DialogFragment() {
 
 	override fun onResume() {
 		super.onResume()
-		radioAlone.isChecked = !(callback?.isPublisher() ?: false) && !(callback?.isSubscriber() ?: false)
-		radioPublisher.isChecked = callback?.isPublisher() ?: false
-		radioSubscriber.isChecked = callback?.isSubscriber() ?: false
-		recycler.adapter = callback?.getAdaptor()
+		updateUi(callback?.getSettingsManager()?.operationMode)
 
+		recycler.adapter = callback?.getAdaptor()
 		if (radioPublisher.isChecked)
 			callback?.getAdaptor()?.populateCache()
-//		else if (radioSubscriber.isChecked)
-//			populateSubscriber() //TODO HERE should not reset when phone change orientation
+		else if (radioSubscriber.isChecked) {
+			textEmail.text = callback?.getSettingsManager()?.publisherEmail
+			textSubscriber.text = callback?.getSettingsManager()?.subscriberName
+		}
 	}
 
 	private fun close() {
+		callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
+		callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+
 		callback?.onModeChanged(
 			when {
 				radioSubscriber.isChecked -> SettingsManager.MODE.SUBSCRIBER
@@ -137,6 +158,25 @@ class SettingsDialog : DialogFragment() {
 		dismiss()
 	}
 
+	/**
+	 * status: 0 - stand alone, 1 - subscriber, 2 - publisher
+	 */
+	private fun updateUi(mode: SettingsManager.MODE?) {
+		val status = callback?.getSettingsManager()?.subscriptionStatus
+		radioAlone.isChecked = (mode == SettingsManager.MODE.STANDALONE)
+		radioSubscriber.isChecked = (mode == SettingsManager.MODE.SUBSCRIBER)
+		radioPublisher.isChecked = (mode == SettingsManager.MODE.PUBLISHER)
+		textEmail.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
+		textSubscriber.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
+		buttonEmail.isEnabled = (mode == SettingsManager.MODE.SUBSCRIBER)
+
+		when(status) {
+			0 -> buttonEmail.setImageDrawable(activity?.getDrawable(R.drawable.icon_mail))
+			1 -> buttonEmail.setImageDrawable(activity?.getDrawable(R.drawable.icon_clear))
+			2 -> buttonEmail.setImageDrawable(activity?.getDrawable(R.drawable.icon_stop))
+		}
+	}
+
 	/*========================================
 	 * Callback interface to the MainActivity
 	 */
@@ -144,8 +184,7 @@ class SettingsDialog : DialogFragment() {
 		fun onModeChanged(mode: SettingsManager.MODE)
 		fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?)
 		fun getAdaptor(): TokenAdaptor
-		fun isPublisher(): Boolean
-		fun isSubscriber(): Boolean
+		fun getSettingsManager(): SettingsManager
 		fun doNotify(msg: String?)
 	}
 	private var callback: Callback? = null

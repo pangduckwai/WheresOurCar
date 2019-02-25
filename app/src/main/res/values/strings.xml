@@ -46,7 +46,13 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_sub_empty">Publisher attempted to update with empty vehicle name</string>
 	<string name="msg_sub_new_parking">Publisher added new parking</string>
 	<string name="msg_sub_new_vehicle">Publisher added new vehicle</string>
-	<string name="msg_pub_email_empty">Publisher\'s email cannot be empty</string>
+	<string name="msg_pub_email_invalid">Require a valid publisher email address</string>
+	<string name="msg_no_subscriber_name">[Not Specified]</string>
+	<string name="msg_device_not_ready">Device token not ready</string>
+	<string name="sub_email_title">"Where's Our Car subscription request"</string>
+	<string name="sub_email_chooser">"Sending subscription request…"</string>
+	<string name="sub_email_subscribe"  >http://sea9.org/woc/s?t=%s&amp;n=%s</string>
+	<string name="sub_email_unsubscribe">http://sea9.org/woc/u?t=%s</string>
 	<string name="firebase_endpoint_fcm">https://fcm.googleapis.com/v1/projects/%s/messages:send</string>
 	<string name="firebase_scope_fcm">https://www.googleapis.com/auth/firebase.messaging</string>
 	<string name="firebase_succeed_fcm">projects/([\\S&amp;&amp;[^/]]+)/messages/([\\S&amp;&amp;[^/]]+)</string>

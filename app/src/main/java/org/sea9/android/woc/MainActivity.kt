@@ -363,19 +363,14 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?) {
 		retainedContext.subscribes(email, subscriber)
-		retainedContext.settingsManager.makeSubscription(email!! ,subscriber)
 	}
 
 	override fun getAdaptor(): TokenAdaptor {
 		return retainedContext.tokenAdaptor
 	}
 
-	override fun isPublisher(): Boolean {
-		return retainedContext.settingsManager.isPublisher()
-	}
-
-	override fun isSubscriber(): Boolean {
-		return retainedContext.settingsManager.isSubscriber()
+	override fun getSettingsManager(): SettingsManager {
+		return retainedContext.settingsManager
 	}
 
 	/*=================================================

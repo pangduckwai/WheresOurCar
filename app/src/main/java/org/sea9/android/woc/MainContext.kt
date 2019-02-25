@@ -105,7 +105,7 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 	/*======================
 	 * Main UI interactions
 	 */
-	val settingsManager = SettingsManager(context)
+	lateinit var settingsManager: SettingsManager
 
 	private var status = STATUS_NORMAL
 	fun isUpdated(): Boolean {
@@ -486,6 +486,7 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
+		settingsManager = SettingsManager(context)
 		tokenAdaptor = TokenAdaptor(this)
 	}
 
