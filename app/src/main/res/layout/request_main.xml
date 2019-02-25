@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		xmlns:tools="http://schemas.android.com/tools"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:fitsSystemWindows="true"
+		tools:context="org.sea9.android.woc.MainActivity">
+
+	<android.support.design.widget.AppBarLayout
+			android:id="@+id/app_bar"
+			android:fitsSystemWindows="true"
+			android:layout_height="@dimen/app_bar_height"
+			android:layout_width="match_parent"
+			android:theme="@style/AppTheme.AppBarOverlay">
+
+		<android.support.design.widget.CollapsingToolbarLayout
+				android:id="@+id/toolbar_layout"
+				android:fitsSystemWindows="true"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				app:toolbarId="@+id/toolbar"
+				app:layout_scrollFlags="scroll|exitUntilCollapsed"
+				app:contentScrim="?attr/colorPrimary">
+
+			<android.support.v7.widget.Toolbar
+					android:id="@+id/toolbar"
+					android:layout_height="?attr/actionBarSize"
+					android:layout_width="match_parent"
+					app:layout_collapseMode="pin"
+					app:popupTheme="@style/AppTheme.PopupOverlay"/>
+		</android.support.design.widget.CollapsingToolbarLayout>
+	</android.support.design.widget.AppBarLayout>
+
+	<android.support.constraint.ConstraintLayout
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:layout_marginTop="@dimen/fab_margin"
+			android:descendantFocusability="beforeDescendants"
+			android:focusableInTouchMode="true"
+			app:layout_behavior="@string/appbar_scrolling_view_behavior"
+			tools:context="org.sea9.android.woc.RequestActivity">
+
+		<TextView
+				android:id="@+id/title"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/fab_margin"
+				android:layout_marginEnd="@dimen/fab_margin"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/fab_margin"
+				android:textSize="@dimen/text_large"
+				android:hint="@string/app_name"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toTopOf="parent"/>
+
+		<TextView
+				android:id="@+id/subscriber"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/fab_margin"
+				android:layout_marginEnd="@dimen/fab_margin"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:paddingStart="@dimen/fab_margin"
+				android:paddingEnd="@dimen/margin_narrow"
+				android:textSize="@dimen/text_title"
+				android:textColor="@android:color/black"
+				android:hint="@string/hint_email_s"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/title"/>
+
+		<TextView
+				android:id="@+id/token_label"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/fab_margin"
+				android:layout_marginEnd="@dimen/fab_margin"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/fab_margin"
+				android:textSize="@dimen/text_large"
+				android:text="@string/label_token"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/subscriber"/>
+
+		<TextView
+				android:id="@+id/token"
+				android:layout_width="0dp"
+				android:layout_height="0dp"
+				android:layout_marginBottom="@dimen/margin_normal"
+				android:layout_marginEnd="@dimen/fab_margin"
+				android:layout_marginStart="@dimen/fab_margin"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:paddingStart="@dimen/fab_margin"
+				android:paddingEnd="@dimen/margin_narrow"
+				android:textSize="@dimen/text_medium"
+				android:textColor="@android:color/black"
+				android:hint="@string/label_token"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/token_label"/>
+	</android.support.constraint.ConstraintLayout>
+
+	<android.support.design.widget.FloatingActionButton
+			android:id="@+id/fab"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_margin="@dimen/fab_margin"
+			app:layout_anchor="@id/app_bar"
+			app:layout_anchorGravity="bottom|end"
+			app:srcCompat="@drawable/icon_confirm"/>
+</android.support.design.widget.CoordinatorLayout>

@@ -53,15 +53,15 @@ class SettingsManager(private val context: Context?) {
 			}
 		}
 
-		private fun sendMail(context: Context?, isSubscribe: Boolean, email: String, name: String?, token: String) {
+		private fun sendMail(context: Context?, isSubscribe: Boolean, publisher: String, subscriber: String, token: String) {
 			val intent = Intent(Intent.ACTION_SENDTO)
 			intent.type = CONTENT_TYPE
 			intent.data = Uri.parse(MAIL_TO)
-			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(email))
+			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(publisher))
 			intent.putExtra(android.content.Intent.EXTRA_SUBJECT, context?.getString(R.string.sub_email_title))
 			intent.putExtra(android.content.Intent.EXTRA_TEXT,
 				if (isSubscribe)
-					context?.getString(R.string.sub_email_subscribe, token, (name ?: context.getString(R.string.msg_no_subscriber_name)) ?: MainActivity.EMPTY)
+					context?.getString(R.string.sub_email_subscribe, token, subscriber)
 				else
 					context?.getString(R.string.sub_email_unsubscribe, token)
 			)
@@ -86,7 +86,7 @@ class SettingsManager(private val context: Context?) {
 	/**
 	 * Name of the subscriber for the publisher to use
 	 */
-	var subscriberName: String? = null
+	var subscriberEmail: String? = null
 
 	/**
 	 * Email address of the publisher to send subscription requests to.
@@ -122,7 +122,7 @@ class SettingsManager(private val context: Context?) {
 						covertMode(it.getInt(KEY_MODE, 0))
 					}
 
-				subscriberName = it.getString(KEY_SUB, null)
+				subscriberEmail = it.getString(KEY_SUB, null)
 				publisherEmail = it.getString(KEY_PUB, null)
 				publisherId = it.getString(KEY_PID, null)
 				subscriptionStatus = it.getInt(KEY_STATUS, 0)
@@ -145,17 +145,17 @@ class SettingsManager(private val context: Context?) {
 		}
 	}
 
-	private fun updateSubscription(status: Int, pid: String?, email: String?, name: String?) {
+	private fun updateSubscription(status: Int, pid: String?, publisher: String?, subscriber: String?) {
 		subscriptionStatus = status
 		publisherId = pid ?: MainActivity.EMPTY
-		if (email != null) publisherEmail = email
-		if (name != null) subscriberName = name
+		if (publisher != null) publisherEmail = publisher
+		if (subscriber != null) subscriberEmail = subscriber
 		context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
 			with(it.edit()) {
 				putInt(KEY_STATUS, status)
 				putString(KEY_PID, pid)
-				if (email != null) putString(KEY_PUB, email)
-				if (name != null) putString(KEY_SUB, name)
+				if (publisher != null) putString(KEY_PUB, publisher)
+				if (subscriber != null) putString(KEY_SUB, subscriber)
 				apply()
 			}
 		}
@@ -164,19 +164,13 @@ class SettingsManager(private val context: Context?) {
 	/**
 	 * This is called after the subscriber pressed the subscribe/unsubscribe button found in the settings dialog.
 	 */
-	fun makeSubscription(email: String?, name: String?, token: String?) {
+	fun makeSubscription(publisher: String, subscriber: String, token: String?) {
 		if (token != null) {
 			updateToken(token)
-			makeSubscription(email, name)
+			makeSubscription(publisher, subscriber)
 		}
 	}
-	fun makeSubscription(email: String?, name: String?) {
-		if (email == null) {
-			val obj = Toast.makeText(context, context?.getString(R.string.msg_pub_email_invalid), Toast.LENGTH_LONG )
-			obj.setGravity(Gravity.TOP, 0, 0)
-			obj.show()
-			return
-		}
+	fun makeSubscription(publisher: String, subscriber: String) {
 		if (deviceToken == null) {
 			val obj = Toast.makeText(context, context?.getString(R.string.msg_device_not_ready), Toast.LENGTH_LONG )
 			obj.setGravity(Gravity.TOP, 0, 0)
@@ -186,15 +180,15 @@ class SettingsManager(private val context: Context?) {
 
 		when(subscriptionStatus) {
 			0 -> { //Subscribing
-				updateSubscription(1, null, email, name ?: MainActivity.EMPTY) // name == null means ignore in updateSubcription()
-				sendMail(context, true, email, name, deviceToken!!)
+				updateSubscription(1, null, publisher, subscriber ?: MainActivity.EMPTY) // name == null means ignore in updateSubcription()
+				sendMail(context, true, publisher, subscriber, deviceToken!!)
 			}
 			1 -> { //Cancelling subscription request
 				updateSubscription(0, null, null, null)
 			}
 			2 -> { //Unsubscribe
 				updateSubscription(0, null, null, null)
-				sendMail(context, false, email, null, deviceToken!!)
+				sendMail(context, false, publisher, subscriber, deviceToken!!)
 			}
 		}
 	}

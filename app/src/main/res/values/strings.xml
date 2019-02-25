@@ -8,6 +8,9 @@ This program is distributed WITHOUT ANY WARRANTY; without even the implied warra
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
     </string>
 	<string name="app_author" translatable="false">paul@sea9.org</string>
+	<string name="app_host">sea9.org</string>
+	<string name="app_pathPrefix">/woc/</string>
+	<string name="app_scheme">http</string>
 	<string name="action_settings">Settings</string>
 	<string name="action_about">About</string>
 	<string name="hint_vehicle">Vehicle</string>
@@ -15,8 +18,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="hint_floor">Floor</string>
 	<string name="hint_lot">Space</string>
 	<string name="hint_update">Last update</string>
-	<string name="hint_name">Subscriber\'s name</string>
-	<string name="hint_email">Publisher\'s email</string>
+	<string name="hint_email_s">Subscriber\'s email</string>
+	<string name="hint_email_p">Publisher\'s email</string>
 	<string name="content_clear">Clear text</string>
 	<string name="content_email">Send email</string>
 	<string name="label_okay">Okay</string>
@@ -27,6 +30,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="label_publisher">Publisher</string>
 	<string name="label_subscriber">Subscriber</string>
 	<string name="label_subscribers">Subscribers</string>
+	<string name="label_token">Device Token</string>
 	<string name="msg_ui_updated">Record updated</string>
 	<string name="msg_ui_add_new">Add new vehicle \'%s\'?</string>
 	<string name="msg_ui_adding">Adding new vehicle \'%s\'…</string>
@@ -46,12 +50,18 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_sub_empty">Publisher attempted to update with empty vehicle name</string>
 	<string name="msg_sub_new_parking">Publisher added new parking</string>
 	<string name="msg_sub_new_vehicle">Publisher added new vehicle</string>
-	<string name="msg_pub_email_invalid">Require a valid publisher email address</string>
-	<string name="msg_no_subscriber_name">[Not Specified]</string>
+	<string name="msg_pub_email_invalid">Require a valid publisher email addresses</string>
+	<string name="msg_sub_email_invalid">Require a valid subscriber email addresses</string>
 	<string name="msg_device_not_ready">Device token not ready</string>
-	<string name="sub_email_title">"Where's Our Car subscription request"</string>
-	<string name="sub_email_chooser">"Sending subscription request…"</string>
-	<string name="sub_email_subscribe"  >http://sea9.org/woc/s?t=%s&amp;n=%s</string>
+
+	<string name="msg_subscribe_okay">Subscription request from</string>
+	<string name="msg_subscribe_fail">Subscription already exists</string>
+	<string name="msg_unsubscribe_okay">Unsubscribe request from</string>
+	<string name="msg_unsubscribe_fail">Subscription not found</string>
+
+	<string name="sub_email_title">Where\'s Our Car subscription request</string>
+	<string name="sub_email_chooser">Sending subscription request…</string>
+	<string name="sub_email_subscribe"  >http://sea9.org/woc/s?t=%s&amp;c=%s</string>
 	<string name="sub_email_unsubscribe">http://sea9.org/woc/u?t=%s</string>
 	<string name="firebase_endpoint_fcm">https://fcm.googleapis.com/v1/projects/%s/messages:send</string>
 	<string name="firebase_scope_fcm">https://www.googleapis.com/auth/firebase.messaging</string>

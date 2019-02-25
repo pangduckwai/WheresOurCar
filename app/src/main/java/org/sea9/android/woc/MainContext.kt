@@ -2,11 +2,9 @@ package org.sea9.android.woc
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.database.SQLException
 import android.net.ConnectivityManager
 import android.net.NetworkInfo
-import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -30,7 +28,7 @@ import java.util.*
 
 class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 	companion object {
-		const val TAG = "woc.retained_frag"
+		const val TAG = "woc.main_retained"
 		const val PATTERN_DATE = "yyyy-MM-dd HH:mm:ss"
 		const val STATUS_NORMAL = 0
 		const val STATUS_UPDATED = 1
@@ -269,11 +267,11 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		return connectivityManager.activeNetworkInfo
 	}
 
-	fun subscribes(email: String?, subscriber: String?) {
+	fun subscribes(publisher: String, subscriber: String) {
 		if (settingsManager.deviceToken == null) { // No token yet, obtaining one...
-			AsyncTokenTask(this).execute(email, subscriber)
+			AsyncTokenTask(this).execute(publisher, subscriber)
 		} else {
-			settingsManager.makeSubscription(email, subscriber)
+			settingsManager.makeSubscription(publisher, subscriber)
 		}
 	}
 	private class AsyncTokenTask(private val caller: MainContext): AsyncTask<String, Void, Array<String>?>() {

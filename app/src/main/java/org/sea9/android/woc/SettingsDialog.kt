@@ -28,7 +28,7 @@ class SettingsDialog : DialogFragment() {
 	private lateinit var radioAlone: RadioButton
 	private lateinit var radioPublisher: RadioButton
 	private lateinit var radioSubscriber: RadioButton
-	private lateinit var textEmail: TextView
+	private lateinit var textPublisher: TextView
 	private lateinit var textSubscriber: TextView
 	private lateinit var buttonEmail: ImageButton
 	private lateinit var recycler: RecyclerView
@@ -63,53 +63,54 @@ class SettingsDialog : DialogFragment() {
 			}
 		}
 
-		textEmail = layout.findViewById(R.id.text_email)
-		textEmail.setOnEditorActionListener { _, actionId, _ ->
+		textPublisher = layout.findViewById(R.id.email_publisher)
+		textPublisher.setOnEditorActionListener { _, actionId, _ ->
 			when (actionId) {
 				EditorInfo.IME_ACTION_NEXT -> {
-					callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
+					callback?.getSettingsManager()?.publisherEmail = textPublisher.text.toString()
 				}
 			}
 			false
 		}
-		textEmail.setOnFocusChangeListener { view, hasFocus ->
+		textPublisher.setOnFocusChangeListener { view, hasFocus ->
 			if (!hasFocus) {
-				callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
+				callback?.getSettingsManager()?.publisherEmail = textPublisher.text.toString()
 				view.clearFocus()
 			}
 		}
 
-		textSubscriber = layout.findViewById(R.id.text_name)
+		textSubscriber = layout.findViewById(R.id.email_subscriber)
 		textSubscriber.setOnEditorActionListener { _, actionId, _ ->
 			when (actionId) {
 				EditorInfo.IME_ACTION_NEXT -> {
-					callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+					callback?.getSettingsManager()?.subscriberEmail = textSubscriber.text.toString()
 				}
 			}
 			false
 		}
 		textSubscriber.setOnFocusChangeListener { view, hasFocus ->
 			if (!hasFocus) {
-				callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+				callback?.getSettingsManager()?.subscriberEmail = textSubscriber.text.toString()
 				view.clearFocus()
 			}
 		}
 
 		buttonEmail = layout.findViewById(R.id.subscribes)
 		buttonEmail.setOnClickListener {
-			val email = textEmail.text
-			val name = textSubscriber.text
+			val publisher = textPublisher.text
+			val subscriber = textSubscriber.text
 			val regex = PATTERN.toRegex()
-			if (email.isNotBlank() && (regex matches email)) {
-				callback?.subscribes(SettingsManager.MODE.SUBSCRIBER, email.toString(), name?.toString())
-				Handler().postDelayed(
-					Runnable {
-						updateUi()
-					}, 250
-				)
-			} else {
+			if (publisher.isBlank() || !(regex matches publisher)) {
 				callback?.doNotify(getString(R.string.msg_pub_email_invalid))
-				textEmail.text = MainActivity.EMPTY
+				textPublisher.text = MainActivity.EMPTY
+			} else if (subscriber.isBlank() || !(regex matches subscriber)) {
+				callback?.doNotify(getString(R.string.msg_sub_email_invalid))
+				textSubscriber.text = MainActivity.EMPTY
+			} else {
+				callback?.subscribes(SettingsManager.MODE.SUBSCRIBER, publisher.toString(), subscriber.toString())
+				Handler().postDelayed({
+					updateUi()
+				}, 250)
 			}
 		}
 
@@ -141,8 +142,8 @@ class SettingsDialog : DialogFragment() {
 	}
 
 	private fun close() {
-		callback?.getSettingsManager()?.publisherEmail = textEmail.text.toString()
-		callback?.getSettingsManager()?.subscriberName = textSubscriber.text.toString()
+		callback?.getSettingsManager()?.publisherEmail = textPublisher.text.toString()
+		callback?.getSettingsManager()?.subscriberEmail = textSubscriber.text.toString()
 
 		callback?.onModeChanged(
 			when {
@@ -151,6 +152,7 @@ class SettingsDialog : DialogFragment() {
 				else -> SettingsManager.MODE.STANDALONE
 			}
 		)
+		callback?.onClose()
 		dismiss()
 	}
 
@@ -168,15 +170,15 @@ class SettingsDialog : DialogFragment() {
 		radioAlone.isChecked = (mode == SettingsManager.MODE.STANDALONE)
 		radioSubscriber.isChecked = (mode == SettingsManager.MODE.SUBSCRIBER)
 		radioPublisher.isChecked = (mode == SettingsManager.MODE.PUBLISHER)
-		textEmail.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
+		textPublisher.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
 		textSubscriber.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
 		buttonEmail.isEnabled = (mode == SettingsManager.MODE.SUBSCRIBER)
 
 		if (mode == SettingsManager.MODE.SUBSCRIBER) {
-			textEmail.text = callback?.getSettingsManager()?.publisherEmail
-			textSubscriber.text = callback?.getSettingsManager()?.subscriberName
+			textPublisher.text = callback?.getSettingsManager()?.publisherEmail
+			textSubscriber.text = callback?.getSettingsManager()?.subscriberEmail
 		} else {
-			textEmail.text = MainActivity.EMPTY
+			textPublisher.text = MainActivity.EMPTY
 			textSubscriber.text = MainActivity.EMPTY
 		}
 
@@ -191,8 +193,9 @@ class SettingsDialog : DialogFragment() {
 	 * Callback interface to the MainActivity
 	 */
 	interface Callback {
+		fun onClose()
 		fun onModeChanged(mode: SettingsManager.MODE)
-		fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?)
+		fun subscribes(mode: SettingsManager.MODE, publisher: String, subscriber: String)
 		fun getAdaptor(): TokenAdaptor
 		fun getSettingsManager(): SettingsManager
 		fun doNotify(msg: String?)

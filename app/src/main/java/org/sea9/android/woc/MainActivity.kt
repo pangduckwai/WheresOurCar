@@ -186,29 +186,7 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun onResume() {
 		super.onResume()
-
-		if (retainedContext.settingsManager.isSubscriber()) {
-			fab.isEnabled = false
-			buttonVehicle.isEnabled = false
-			buttonParking.isEnabled = false
-			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
-			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
-			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
-			textParking.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
-			textVehicle.setAdapter(null)
-			textParking.setAdapter(null)
-		} else {
-			fab.isEnabled = true
-			buttonVehicle.isEnabled = true
-			buttonParking.isEnabled = true
-			textFloor.filters = arrayOf()
-			textLot.filters = arrayOf()
-			textVehicle.filters = arrayOf()
-			textParking.filters = arrayOf()
-			textVehicle.setAdapter(retainedContext.vehicleAdaptor)
-			textParking.setAdapter(retainedContext.parkingAdaptor)
-		}
-
+		updateUi()
 		BroadcastObserver.addObserver(this)
 	}
 
@@ -257,6 +235,30 @@ class MainActivity : AppCompatActivity(), Observer
 			(getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(view.windowToken, 0)
 			view.clearFocus()
 		}, 100)
+	}
+
+	private fun updateUi() {
+		if (retainedContext.settingsManager.isSubscriber()) {
+			fab.isEnabled = false
+			buttonVehicle.isEnabled = false
+			buttonParking.isEnabled = false
+			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textParking.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
+			textVehicle.setAdapter(null)
+			textParking.setAdapter(null)
+		} else {
+			fab.isEnabled = true
+			buttonVehicle.isEnabled = true
+			buttonParking.isEnabled = true
+			textFloor.filters = arrayOf()
+			textLot.filters = arrayOf()
+			textVehicle.filters = arrayOf()
+			textParking.filters = arrayOf()
+			textVehicle.setAdapter(retainedContext.vehicleAdaptor)
+			textParking.setAdapter(retainedContext.parkingAdaptor)
+		}
 	}
 	//===================
 
@@ -356,13 +358,17 @@ class MainActivity : AppCompatActivity(), Observer
 	/*==================================================
 	 * @see org.sea9.android.ui.SettingsDialog.Callback
 	 */
+	override fun onClose() {
+		updateUi()
+	}
+
 	override fun onModeChanged(mode: SettingsManager.MODE) {
 		retainedContext.publish()
 		retainedContext.settingsManager.updateMode(mode)
 	}
 
-	override fun subscribes(mode: SettingsManager.MODE, email: String?, subscriber: String?) {
-		retainedContext.subscribes(email, subscriber)
+	override fun subscribes(mode: SettingsManager.MODE, publisher: String, subscriber: String) {
+		retainedContext.subscribes(publisher, subscriber)
 	}
 
 	override fun getAdaptor(): TokenAdaptor {

@@ -71,17 +71,33 @@
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:orientation="vertical">
-			<RadioButton
-					android:id="@+id/radio_subscriber"
-					android:layout_width="wrap_content"
+			<LinearLayout
+					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:layout_marginBottom="@dimen/margin_narrow"
-					android:layout_marginTop="@dimen/margin_narrow"
-					android:layout_gravity="start|top"
-					android:textSize="@dimen/text_title"
-					android:text="@string/label_subscriber"/>
+					android:orientation="horizontal">
+				<RadioButton
+						android:id="@+id/radio_subscriber"
+						android:layout_width="0dp"
+						android:layout_height="wrap_content"
+						android:layout_weight="1"
+						android:layout_marginBottom="@dimen/margin_narrow"
+						android:layout_marginTop="@dimen/margin_narrow"
+						android:layout_gravity="start|top"
+						android:textSize="@dimen/text_title"
+						android:text="@string/label_subscriber"/>
+				<ImageButton
+						android:id="@+id/subscribes"
+						android:layout_width="@dimen/text_title"
+						android:layout_height="@dimen/text_title"
+						android:layout_marginBottom="@dimen/margin_narrow"
+						android:layout_marginEnd="@dimen/margin_normal"
+						android:layout_marginTop="@dimen/margin_normal"
+						android:contentDescription="@string/content_email"
+						android:background="?android:attr/selectableItemBackground"
+						android:src="@drawable/icon_mail"/>
+			</LinearLayout>
 			<EditText
-					android:id="@+id/text_email"
+					android:id="@+id/email_publisher"
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:layout_marginBottom="@dimen/margin_narrow"
@@ -94,34 +110,23 @@
 					android:inputType="textEmailAddress|textMultiLine"
 					android:imeOptions="actionDone|flagNoExtractUi"
 					android:selectAllOnFocus="true"
-					android:hint="@string/hint_email"/>
-			<LinearLayout
+					android:hint="@string/hint_email_p"/>
+
+			<EditText
+					android:id="@+id/email_subscriber"
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:orientation="horizontal">
-				<EditText
-						android:id="@+id/text_name"
-						android:layout_width="0dp"
-						android:layout_height="wrap_content"
-						android:layout_weight="1"
-						android:layout_marginBottom="@dimen/margin_narrow"
-						android:layout_marginTop="@dimen/margin_narrow"
-						android:textSize="@dimen/text_medium"
-						android:inputType="textEmailAddress"
-						android:imeOptions="actionDone|flagNoExtractUi"
-						android:selectAllOnFocus="true"
-						android:hint="@string/hint_name"/>
-				<ImageButton
-						android:id="@+id/subscribes"
-						android:layout_width="@dimen/text_title"
-						android:layout_height="@dimen/text_title"
-						android:layout_marginBottom="@dimen/margin_narrow"
-						android:layout_marginEnd="@dimen/margin_normal"
-						android:layout_marginTop="@dimen/margin_normal"
-						android:contentDescription="@string/content_email"
-						android:background="?android:attr/selectableItemBackground"
-						android:src="@drawable/icon_mail"/>
-			</LinearLayout>
+					android:layout_marginBottom="@dimen/margin_narrow"
+					android:layout_marginTop="@dimen/margin_narrow"
+					android:textSize="@dimen/text_medium"
+					android:gravity="top|start"
+					android:lines="2"
+					android:minLines="2"
+					android:maxLines="2"
+					android:inputType="textEmailAddress|textMultiLine"
+					android:imeOptions="actionDone|flagNoExtractUi"
+					android:selectAllOnFocus="true"
+					android:hint="@string/hint_email_s"/>
 		</LinearLayout>
 	</android.support.v7.widget.CardView>
 
