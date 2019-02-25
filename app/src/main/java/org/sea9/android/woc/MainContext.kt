@@ -273,20 +273,7 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		if (settingsManager.deviceToken == null) { // No token yet, obtaining one...
 			AsyncTokenTask(this).execute(email, subscriber)
 		} else {
-			subscribe(email, subscriber, settingsManager.deviceToken)
-		}
-	}
-	private fun subscribe(email: String?, subscriber: String?, token: String?) {
-		if (email != null) {
-			val intent = Intent(Intent.ACTION_SENDTO)
-			intent.type = "plain/text"
-			intent.data = Uri.parse("mailto:")
-			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(email))
-			intent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Where's Our Car subscription request")
-			intent.putExtra(android.content.Intent.EXTRA_TEXT,
-				"http://sea9.org/woc/s?t=$token&s=${subscriber ?: MainActivity.EMPTY}"
-			)
-			startActivity(Intent.createChooser(intent, "Sending subscription request…"))
+			settingsManager.makeSubscription(email, subscriber)
 		}
 	}
 	private class AsyncTokenTask(private val caller: MainContext): AsyncTask<String, Void, Array<String>?>() {
@@ -309,7 +296,7 @@ class MainContext: Fragment(), DbHelper.Caller, TokenAdaptor.Caller {
 		override fun onPostExecute(result: Array<String>?) {
 			if (result != null) {
 				caller.activity?.runOnUiThread {
-					caller.subscribe(result[0], result[1], caller.settingsManager.deviceToken)
+					caller.settingsManager.makeSubscription(result[0], result[1], caller.settingsManager.deviceToken)
 				}
 			}
 		}

@@ -70,7 +70,6 @@ class SettingsManager(private val context: Context?) {
 	}
 
 	var operationMode: MODE = MODE.STANDALONE
-		private set
 	fun isSubscriber(): Boolean {
 		return (operationMode == MODE.SUBSCRIBER)
 	}
@@ -135,11 +134,7 @@ class SettingsManager(private val context: Context?) {
 		updateMode(convertMode(mode))
 	}
 	private fun updateMode(mode: Int) {
-		val newMode = covertMode(mode)
-		if (newMode != operationMode) {
-			operationMode = newMode
-			save(context, KEY_MODE, mode)
-		}
+		save(context, KEY_MODE, mode)
 	}
 
 	fun updateToken(token: String) {

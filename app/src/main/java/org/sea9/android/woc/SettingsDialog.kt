@@ -2,6 +2,7 @@ package org.sea9.android.woc
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -41,8 +42,6 @@ class SettingsDialog : DialogFragment() {
 				updateUi(SettingsManager.MODE.STANDALONE)
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
-				textEmail.text = MainActivity.EMPTY
-				textSubscriber.text = MainActivity.EMPTY
 			}
 		}
 
@@ -52,8 +51,6 @@ class SettingsDialog : DialogFragment() {
 				updateUi(SettingsManager.MODE.PUBLISHER)
 				callback?.getAdaptor()?.populateCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
-				textEmail.text = MainActivity.EMPTY
-				textSubscriber.text = MainActivity.EMPTY
 			}
 		}
 
@@ -63,8 +60,6 @@ class SettingsDialog : DialogFragment() {
 				updateUi(SettingsManager.MODE.SUBSCRIBER)
 				callback?.getAdaptor()?.clearCache()
 				callback?.getAdaptor()?.notifyDataSetChanged()
-				textEmail.text = callback?.getSettingsManager()?.publisherEmail
-				textSubscriber.text = callback?.getSettingsManager()?.subscriberName
 			}
 		}
 
@@ -107,6 +102,11 @@ class SettingsDialog : DialogFragment() {
 			val regex = PATTERN.toRegex()
 			if (email.isNotBlank() && (regex matches email)) {
 				callback?.subscribes(SettingsManager.MODE.SUBSCRIBER, email.toString(), name?.toString())
+				Handler().postDelayed(
+					Runnable {
+						updateUi()
+					}, 250
+				)
 			} else {
 				callback?.doNotify(getString(R.string.msg_pub_email_invalid))
 				textEmail.text = MainActivity.EMPTY
@@ -138,10 +138,6 @@ class SettingsDialog : DialogFragment() {
 		recycler.adapter = callback?.getAdaptor()
 		if (radioPublisher.isChecked)
 			callback?.getAdaptor()?.populateCache()
-		else if (radioSubscriber.isChecked) {
-			textEmail.text = callback?.getSettingsManager()?.publisherEmail
-			textSubscriber.text = callback?.getSettingsManager()?.subscriberName
-		}
 	}
 
 	private fun close() {
@@ -162,13 +158,27 @@ class SettingsDialog : DialogFragment() {
 	 * status: 0 - stand alone, 1 - subscriber, 2 - publisher
 	 */
 	private fun updateUi(mode: SettingsManager.MODE?) {
+		callback?.getSettingsManager()?.operationMode = mode ?: SettingsManager.MODE.STANDALONE
+		updateUi()
+	}
+	private fun updateUi() {
+		val mode = callback?.getSettingsManager()?.operationMode
 		val status = callback?.getSettingsManager()?.subscriptionStatus
+
 		radioAlone.isChecked = (mode == SettingsManager.MODE.STANDALONE)
 		radioSubscriber.isChecked = (mode == SettingsManager.MODE.SUBSCRIBER)
 		radioPublisher.isChecked = (mode == SettingsManager.MODE.PUBLISHER)
 		textEmail.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
 		textSubscriber.isEnabled = ((mode == SettingsManager.MODE.SUBSCRIBER) && (status == 0))
 		buttonEmail.isEnabled = (mode == SettingsManager.MODE.SUBSCRIBER)
+
+		if (mode == SettingsManager.MODE.SUBSCRIBER) {
+			textEmail.text = callback?.getSettingsManager()?.publisherEmail
+			textSubscriber.text = callback?.getSettingsManager()?.subscriberName
+		} else {
+			textEmail.text = MainActivity.EMPTY
+			textSubscriber.text = MainActivity.EMPTY
+		}
 
 		when(status) {
 			0 -> buttonEmail.setImageDrawable(activity?.getDrawable(R.drawable.icon_mail))
