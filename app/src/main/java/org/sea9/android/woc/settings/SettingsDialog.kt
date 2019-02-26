@@ -1,4 +1,4 @@
-package org.sea9.android.woc
+package org.sea9.android.woc.settings
 
 import android.content.Context
 import android.os.Bundle
@@ -11,6 +11,8 @@ import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
 import android.widget.RadioButton
 import android.widget.TextView
+import org.sea9.android.woc.MainActivity
+import org.sea9.android.woc.R
 import org.sea9.android.woc.data.TokenAdaptor
 
 class SettingsDialog : DialogFragment() {

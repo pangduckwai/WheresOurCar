@@ -18,6 +18,8 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
 import org.sea9.android.woc.data.TokenAdaptor
+import org.sea9.android.woc.settings.SettingsDialog
+import org.sea9.android.woc.settings.SettingsManager
 import java.text.SimpleDateFormat
 import java.util.*
 

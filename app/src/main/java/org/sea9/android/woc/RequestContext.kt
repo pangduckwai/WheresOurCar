@@ -10,6 +10,7 @@ import android.util.Log
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.messaging.PublishingUtils
+import org.sea9.android.woc.settings.SettingsManager
 import java.lang.RuntimeException
 
 class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {

@@ -1,4 +1,4 @@
-package org.sea9.android.woc
+package org.sea9.android.woc.settings
 
 import android.content.Context
 import android.content.Intent
@@ -8,6 +8,8 @@ import android.view.Gravity
 import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import org.sea9.android.woc.MainActivity
+import org.sea9.android.woc.R
 
 class SettingsManager(private val context: Context?) {
 	companion object {
@@ -20,6 +22,7 @@ class SettingsManager(private val context: Context?) {
 		const val KEY_STATUS = "woc.publisher.statue"
 		private const val CONTENT_TYPE = "plain/text"
 		private const val MAIL_TO = "mailto:"
+		private const val EMPTY = ""
 
 		private fun covertMode(mode: Int): MODE {
 			return when (mode) {
@@ -69,7 +72,8 @@ class SettingsManager(private val context: Context?) {
 		}
 	}
 
-	var operationMode: MODE = MODE.STANDALONE
+	var operationMode: MODE =
+		MODE.STANDALONE
 	fun isSubscriber(): Boolean {
 		return (operationMode == MODE.SUBSCRIBER)
 	}
@@ -119,7 +123,12 @@ class SettingsManager(private val context: Context?) {
 					if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) != ConnectionResult.SUCCESS) {
 						MODE.UNCONNECTED
 					} else {
-						covertMode(it.getInt(KEY_MODE, 0))
+						covertMode(
+							it.getInt(
+								KEY_MODE,
+								0
+							)
+						)
 					}
 
 				subscriberEmail = it.getString(KEY_SUB, null)
@@ -134,26 +143,37 @@ class SettingsManager(private val context: Context?) {
 		updateMode(convertMode(mode))
 	}
 	private fun updateMode(mode: Int) {
-		save(context, KEY_MODE, mode)
+		save(
+			context,
+			KEY_MODE,
+			mode
+		)
 	}
 
 	fun updateToken(token: String) {
 		load(false) //First sync in memory value of deviceToken from the stored copy
 		if (deviceToken != token) {
 			deviceToken = token
-			save(context, KEY_TOKEN, token)
+			save(
+				context,
+				KEY_TOKEN,
+				token
+			)
 		}
 	}
 
+	/**
+	 * For pid, publisher and subscriber, null means ignore, clear by setting to EMPTY
+	 */
 	private fun updateSubscription(status: Int, pid: String?, publisher: String?, subscriber: String?) {
 		subscriptionStatus = status
-		publisherId = pid ?: MainActivity.EMPTY
+		if (pid != null) publisherId = pid
 		if (publisher != null) publisherEmail = publisher
 		if (subscriber != null) subscriberEmail = subscriber
 		context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
 			with(it.edit()) {
 				putInt(KEY_STATUS, status)
-				putString(KEY_PID, pid)
+				if (pid != null) putString(KEY_PID, pid)
 				if (publisher != null) putString(KEY_PUB, publisher)
 				if (subscriber != null) putString(KEY_SUB, subscriber)
 				apply()
@@ -180,16 +200,37 @@ class SettingsManager(private val context: Context?) {
 
 		when(subscriptionStatus) {
 			0 -> { //Subscribing
-				updateSubscription(1, null, publisher, subscriber ?: MainActivity.EMPTY) // name == null means ignore in updateSubcription()
-				sendMail(context, true, publisher, subscriber, deviceToken!!)
+				updateSubscription(1, EMPTY, publisher, subscriber) // name == null means ignore in updateSubcription()
+				sendMail(
+					context,
+					true,
+					publisher,
+					subscriber,
+					deviceToken!!
+				)
 			}
 			1 -> { //Cancelling subscription request
-				updateSubscription(0, null, null, null)
+				updateSubscription(0, EMPTY, null, null)
 			}
 			2 -> { //Unsubscribe
-				updateSubscription(0, null, null, null)
-				sendMail(context, false, publisher, subscriber, deviceToken!!)
+				updateSubscription(0, EMPTY, null, null)
+				sendMail(
+					context,
+					false,
+					publisher,
+					subscriber,
+					deviceToken!!
+				)
 			}
+		}
+	}
+
+	/**
+	 * This is for subscriber receiving publication for the first time.
+	 */
+	fun receiveApproval(id: String?) {
+		if ((subscriptionStatus == 1) && (publisherId == null)) {
+			updateSubscription(1, id, null, null)
 		}
 	}
 
@@ -197,9 +238,9 @@ class SettingsManager(private val context: Context?) {
 	 * This is called after the subscriber accepted the received publication, after the publisher received the subscrption
 	 * request, and subsequently send the first FCM message to the subscriber.
 	 */
-	fun acceptSubscription(id: String) {
-		if (subscriptionStatus == 1) {
-			updateSubscription(2, id, null, null)
+	fun acceptSubscription() {
+		if ((subscriptionStatus == 1) && (publisherId != null)) {
+			updateSubscription(2, null, null, null)
 		}
 	}
 

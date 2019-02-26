@@ -16,6 +16,7 @@ import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.TokenAdaptor
 import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.woc.messaging.PublishingUtils
+import org.sea9.android.woc.settings.SettingsManager
 import java.lang.RuntimeException
 
 class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Caller {
@@ -82,8 +83,7 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		return settingsManager
 	}
 
-	lateinit var publishingUtils: PublishingUtils
-		private set
+	private lateinit var publishingUtils: PublishingUtils
 
 	fun publish() {
 		publishingUtils.publish(currentVehicle)
