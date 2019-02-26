@@ -8,8 +8,8 @@ import android.view.Gravity
 import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
-import org.sea9.android.woc.MainActivity
 import org.sea9.android.woc.R
+import java.util.*
 
 class SettingsManager(private val context: Context?) {
 	companion object {
@@ -20,6 +20,7 @@ class SettingsManager(private val context: Context?) {
 		const val KEY_SUB = "woc.subscriber"
 		const val KEY_PID = "woc.publisher.id"
 		const val KEY_STATUS = "woc.publisher.statue"
+		const val KEY_MOD = "woc.subscritpion.submitted"
 		private const val CONTENT_TYPE = "plain/text"
 		private const val MAIL_TO = "mailto:"
 		private const val EMPTY = ""
@@ -110,6 +111,9 @@ class SettingsManager(private val context: Context?) {
 	var subscriptionStatus: Int = 0
 		private set
 
+	var subscribeTime: Long = -1
+		private set
+
 	init {
 		load(true)
 	}
@@ -135,6 +139,7 @@ class SettingsManager(private val context: Context?) {
 				publisherEmail = it.getString(KEY_PUB, null)
 				publisherId = it.getString(KEY_PID, null)
 				subscriptionStatus = it.getInt(KEY_STATUS, 0)
+				subscribeTime = it.getLong(KEY_MOD, 0)
 			}
 		}
 	}
@@ -170,12 +175,19 @@ class SettingsManager(private val context: Context?) {
 		if (pid != null) publisherId = pid
 		if (publisher != null) publisherEmail = publisher
 		if (subscriber != null) subscriberEmail = subscriber
+		if ((status == 1) && (pid == EMPTY)) {
+			subscribeTime = Date().time
+		} else if (status == 0) {
+			subscribeTime = -1
+		}
+
 		context?.getSharedPreferences(TAG, Context.MODE_PRIVATE)?.let {
 			with(it.edit()) {
 				putInt(KEY_STATUS, status)
 				if (pid != null) putString(KEY_PID, pid)
 				if (publisher != null) putString(KEY_PUB, publisher)
 				if (subscriber != null) putString(KEY_SUB, subscriber)
+				if (((status == 1) && (pid == EMPTY)) || (status == 0)) putLong(KEY_MOD, subscribeTime)
 				apply()
 			}
 		}
@@ -229,7 +241,7 @@ class SettingsManager(private val context: Context?) {
 	 * This is for subscriber receiving publication for the first time.
 	 */
 	fun receiveApproval(id: String?) {
-		if ((subscriptionStatus == 1) && (publisherId == null)) {
+		if ((subscriptionStatus == 1) && publisherId.isNullOrEmpty()) {
 			updateSubscription(1, id, null, null)
 		}
 	}
@@ -239,8 +251,13 @@ class SettingsManager(private val context: Context?) {
 	 * request, and subsequently send the first FCM message to the subscriber.
 	 */
 	fun acceptSubscription() {
-		if ((subscriptionStatus == 1) && (publisherId != null)) {
+		if ((subscriptionStatus == 1) && !publisherId.isNullOrEmpty()) {
 			updateSubscription(2, null, null, null)
+		}
+	}
+	fun rejectSubscription() {
+		if ((subscriptionStatus == 1) && !publisherId.isNullOrEmpty()) {
+			updateSubscription(0, EMPTY, null, null)
 		}
 	}
 

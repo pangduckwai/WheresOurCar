@@ -18,13 +18,14 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
 import org.sea9.android.woc.data.TokenAdaptor
+import org.sea9.android.woc.messaging.SubscribeDialog
 import org.sea9.android.woc.settings.SettingsDialog
 import org.sea9.android.woc.settings.SettingsManager
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity(), Observer
-	, MainContext.Callback, SettingsDialog.Callback, MessageDialog.Callback {
+class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
+	, SettingsDialog.Callback, SubscribeDialog.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.main"
 		const val EMPTY = ""
@@ -166,7 +167,7 @@ class MainActivity : AppCompatActivity(), Observer
 			}
 		}
 
-		textUpdate = findViewById(R.id.update)
+		textUpdate = findViewById(R.id.update_time)
 
 		fab.setOnClickListener {
 			retainedContext.updateFloor(textFloor.text.toString())
@@ -188,8 +189,18 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun onResume() {
 		super.onResume()
-		updateUi()
 		BroadcastObserver.addObserver(this)
+
+		if (retainedContext.getSettingsManager().isSubscriber() &&
+			(retainedContext.getSettingsManager().subscriptionStatus == 1) &&
+			(retainedContext.getSettingsManager().publisherId?.isNotEmpty() == true)) {
+			SubscribeDialog.getInstance(
+				retainedContext.getSettingsManager().publisherId!!,
+				retainedContext.getSettingsManager().subscribeTime
+			).show(supportFragmentManager, SubscribeDialog.TAG)
+		} else {
+			updateUi()
+		}
 	}
 
 	override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -262,7 +273,6 @@ class MainActivity : AppCompatActivity(), Observer
 			textParking.setAdapter(retainedContext.parkingAdaptor)
 		}
 	}
-	//===================
 
 	/*======================================================
 	 * Common implementation of several Callback interfaces
@@ -282,7 +292,6 @@ class MainActivity : AppCompatActivity(), Observer
 			obj.show()
 		}
 	}
-	//======================================================
 
 	/*================================================
 	 * @see org.sea9.android.woc.MainContext.Callback
@@ -357,8 +366,8 @@ class MainActivity : AppCompatActivity(), Observer
 		MainWidget.update(this)
 	}
 
-	/*==================================================
-	 * @see org.sea9.android.ui.SettingsDialog.Callback
+	/*============================================================
+	 * @see org.sea9.android.woc.settings.SettingsDialog.Callback
 	 */
 	override fun onClose() {
 		updateUi()
@@ -379,6 +388,19 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun getSettingsManager(): SettingsManager {
 		return retainedContext.getSettingsManager()
+	}
+
+	/*==============================================================
+	 * @see org.sea9.android.woc.messaging.SubscribeDialog.Callback
+	 */
+	override fun onAccept() {
+		retainedContext.acceptSubscription()
+		updateUi()
+	}
+
+	override fun onReject() {
+		retainedContext.rejectSubscription()
+		updateUi()
 	}
 
 	/*=================================================

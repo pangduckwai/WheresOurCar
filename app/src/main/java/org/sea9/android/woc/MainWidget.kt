@@ -28,6 +28,7 @@ class MainWidget: AppWidgetProvider() {
 		const val TAG = "woc.widget"
 		private const val SFX_FLR = "/F"
 		private const val PFX_LOT = "P"
+		private const val EMPTY = ""
 
 		fun update(context: Context?) {
 			context?.let {
@@ -94,6 +95,8 @@ class MainWidget: AppWidgetProvider() {
 				}
 			} else {
 				Log.i(TAG, "No current record found")
+				views.setTextViewText(R.id.floor, EMPTY)
+				views.setTextViewText(R.id.lot, EMPTY)
 			}
 			helper.close()
 			manager.updateAppWidget(component, views)

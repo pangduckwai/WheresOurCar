@@ -203,6 +203,25 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		}
 	}
 
+	fun acceptSubscription() {
+		settingsManager.acceptSubscription()
+		DbContract.Vehicle.selectTemp(dbHelper!!)?.let {
+			if (DbContract.Vehicle.switch(dbHelper!!, it.rid) != null) {
+				populateCurrent(null, true)
+				callback?.onUpdated()
+			}
+		}
+	}
+	fun rejectSubscription() {
+		settingsManager.rejectSubscription()
+		DbContract.Vehicle.selectTemp(dbHelper!!)?.let {
+			if (DbContract.Vehicle.delete(dbHelper!!, it.rid) == 1) {
+				populateCurrent(null, true)
+				callback?.onUpdated()
+			}
+		}
+	}
+
 	lateinit var vehicleAdaptor: ArrayAdapter<String>
 		private set
 

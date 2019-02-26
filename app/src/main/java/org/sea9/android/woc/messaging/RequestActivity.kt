@@ -1,4 +1,4 @@
-package org.sea9.android.woc
+package org.sea9.android.woc.messaging
 
 import android.content.DialogInterface
 import android.os.Bundle
@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.app_main.*
 import org.sea9.android.ui.MessageDialog
+import org.sea9.android.woc.R
 import java.lang.RuntimeException
 
 class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDialog.Callback {

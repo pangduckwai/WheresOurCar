@@ -47,31 +47,33 @@ class MessagingService: FirebaseMessagingService() {
 					return
 				}
 
-				remoteMessage?.data?.isNotEmpty()?.let {
-					if ((settingsManager.subscriptionStatus == 1) && (settingsManager.publisherId.isNullOrEmpty())) {
-						settingsManager.receiveApproval(remoteMessage?.from)
-					} else if ((settingsManager.subscriptionStatus == 2) &&
-							   (settingsManager.publisherId == remoteMessage?.from)) {
-						val veh = remoteMessage.data[VehicleRecord.NAM]
-						val prk = remoteMessage.data[VehicleRecord.PRK]
-						val flr = remoteMessage.data[VehicleRecord.FLR]
-						val lot = remoteMessage.data[VehicleRecord.LOT]
-						val mod = remoteMessage.data[VehicleRecord.MOD]
+				if (remoteMessage?.data?.isNotEmpty() == true) {
+					val veh = remoteMessage.data[VehicleRecord.NAM]
+					val prk = remoteMessage.data[VehicleRecord.PRK]
+					val flr = remoteMessage.data[VehicleRecord.FLR]
+					val lot = remoteMessage.data[VehicleRecord.LOT]
+					val mod = remoteMessage.data[VehicleRecord.MOD]
 
-						// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
-						// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
-						// in those cases. Therefore check for null for all the 4 fields.
-						if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
-							val helper = DbHelper(object : DbHelper.Caller {
-								override fun getContext(): Context? {
-									return this@MessagingService
-								}
+					val helper = DbHelper(object : DbHelper.Caller {
+						override fun getContext(): Context? {
+							return this@MessagingService
+						}
+						override fun onReady() {
+							Log.d(TAG, "DB connection ready for app widget")
+						}
+					})
 
-								override fun onReady() {
-									Log.d(TAG, "DB connection ready for app widget")
-								}
-							})
-
+					// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
+					// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
+					// in those cases. Therefore check for null for all the 4 fields.
+					if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
+						if ((settingsManager.subscriptionStatus == 1) && settingsManager.publisherId.isNullOrEmpty()) {
+							Log.w(TAG, "Pending approval: ${remoteMessage.from}")
+							settingsManager.receiveApproval(remoteMessage.from)
+							DbContract.Vehicle.insertTemp(helper, VehicleRecord(-1, veh, prk, flr, lot, false, mod?.toLongOrNull()))
+						} else if ((settingsManager.subscriptionStatus == 2) &&
+								   (settingsManager.publisherId == remoteMessage.from)) {
+							Log.w(TAG, "Subscribed: ${settingsManager.publisherId} / ${remoteMessage.from}")
 							val list = DbContract.Vehicle.select(helper, veh)
 							val status: Int
 							val record = when (list.size) {
@@ -88,8 +90,10 @@ class MessagingService: FirebaseMessagingService() {
 							// Keep the modified timestamp here because should use the modified timestamp from the publisher
 							onUpdate(MainContext.saveVehicle(status, record, helper, false))
 						} else {
-							Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
+							Log.w(TAG, "Ignoring messages: ${settingsManager.publisherId} / ${remoteMessage.from}")
 						}
+					} else {
+						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
 					}
 				}
 			}

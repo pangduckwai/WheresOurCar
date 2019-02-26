@@ -3,6 +3,7 @@ package org.sea9.android.woc.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
+import android.database.SQLException
 import android.provider.BaseColumns
 import java.util.*
 
@@ -77,6 +78,8 @@ object DbContract {
 			private const val COL_LOT = "lot"
 			private const val COL_CURR = "isCurrent"
 			private const val IDX_VEHICLE = "idxVehicle"
+			private const val SEL_NORMAL = "$COL_CURR >= 0"
+			private const val SEL_TEMP = "$COL_CURR < 0"
 
 			const val SQL_CREATE =
 				"create table $TABLE (" +
@@ -109,7 +112,7 @@ object DbContract {
 			fun select(helper: DbHelper): VehicleRecord? {
 				return select(
 					helper.readableDatabase.query(
-						TABLE, COLUMNS, null, null, null, null,
+						TABLE, COLUMNS, SEL_NORMAL, null, null, null,
 						"$COL_CURR desc, $COMMON_MODF desc"
 					), true
 				)?.get(0)
@@ -139,10 +142,22 @@ object DbContract {
 			fun selectAll(helper: DbHelper): List<VehicleRecord> {
 				return select(
 					helper.readableDatabase.query(
-						TABLE, COLUMNS, null, null, null, null,
+						TABLE, COLUMNS, SEL_NORMAL, null, null, null,
 						COMMON_NAME
 					), false
 				) ?: mutableListOf()
+			}
+
+			/**
+			 * Retrieve the temporary vehicle record.
+			 */
+			fun selectTemp(helper: DbHelper): VehicleRecord? {
+				return select(
+					helper.readableDatabase.query(
+						TABLE, COLUMNS, SEL_TEMP, null, null, null,
+						"$COL_CURR, $COMMON_MODF desc"
+					), true
+				)?.get(0)
 			}
 
 			private fun select(cursor: Cursor, firstRowOnly: Boolean): List<VehicleRecord>? {
@@ -178,6 +193,33 @@ object DbContract {
 					put(COMMON_MODF, Date().time)
 				}
 				return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)
+			}
+			fun insertTemp(helper: DbHelper, record: VehicleRecord): Long {
+				with(select(helper, record.name)) {
+					if (size > 0) {
+						val args = arrayOf(get(0).rid.toString())
+						val newRow = ContentValues().apply {
+							put(COL_PARK, record.parking)
+							put(COL_FLOOR, record.floor)
+							put(COL_LOT, record.lot)
+							put(COL_CURR, -1)
+							put(COMMON_MODF, record.modified ?: Date().time)
+						}
+						if (helper.writableDatabase.update(TABLE, newRow, COMMON_PKEY, args) > 0)
+							return get(0).rid
+					} else {
+						val newRow = ContentValues().apply {
+							put(COMMON_NAME, record.name)
+							put(COL_PARK, record.parking)
+							put(COL_FLOOR, record.floor)
+							put(COL_LOT, record.lot)
+							put(COL_CURR, -1)
+							put(COMMON_MODF, record.modified ?: Date().time)
+						}
+						return helper.writableDatabase.insertOrThrow(TABLE, null, newRow)
+					}
+					return -1
+				}
 			}
 
 			fun update(helper: DbHelper, record: VehicleRecord): Int {

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+		xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_marginTop="@dimen/fab_margin"
+		android:focusableInTouchMode="true">
+
+	<TextView
+			android:id="@+id/title"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="@dimen/fab_margin"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/fab_margin"
+			android:textSize="@dimen/text_normal"
+			android:text="@string/msg_accept_title"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"/>
+
+	<TextView
+			android:id="@+id/publisher"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="@dimen/fab_margin"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_normal"
+			android:paddingStart="@dimen/fab_margin"
+			android:paddingEnd="@dimen/margin_narrow"
+			android:textSize="@dimen/text_normal"
+			android:textColor="@android:color/black"
+			android:hint="@string/hint_id_p"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/title"/>
+
+	<TextView
+			android:id="@+id/time_label"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="@dimen/fab_margin"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/fab_margin"
+			android:textSize="@dimen/text_normal"
+			android:text="@string/msg_accept_time"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/publisher"/>
+
+	<TextView
+			android:id="@+id/subscribe_time"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="@dimen/fab_margin"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_normal"
+			android:paddingStart="@dimen/fab_margin"
+			android:paddingEnd="@dimen/margin_narrow"
+			android:textSize="@dimen/text_normal"
+			android:textColor="@android:color/black"
+			android:hint="@string/hint_request_time"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/time_label"/>
+
+	<Button
+			android:id="@+id/accept"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:layout_marginTop="@dimen/margin_narrow"
+			android:background="?android:attr/selectableItemBackground"
+			android:text="@string/label_accept"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/subscribe_time"/>
+
+	<Button
+			android:id="@+id/reject"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:layout_marginTop="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/margin_narrow"
+			android:background="?android:attr/selectableItemBackground"
+			android:text="@string/label_reject"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toStartOf="@+id/accept"
+			app:layout_constraintTop_toBottomOf="@+id/subscribe_time"/>
+
+	<Button
+			android:id="@+id/cancel"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:layout_marginTop="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/margin_narrow"
+			android:background="?android:attr/selectableItemBackground"
+			android:text="@string/label_cancel"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toStartOf="@+id/reject"
+			app:layout_constraintTop_toBottomOf="@+id/subscribe_time"/>
+</android.support.constraint.ConstraintLayout>

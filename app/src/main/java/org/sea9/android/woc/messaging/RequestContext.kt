@@ -1,4 +1,4 @@
-package org.sea9.android.woc
+package org.sea9.android.woc.messaging
 
 import android.content.Context
 import android.content.Intent
@@ -7,9 +7,10 @@ import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.util.Log
+import org.sea9.android.woc.R
+import org.sea9.android.woc.RetainedContext
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
-import org.sea9.android.woc.messaging.PublishingUtils
 import org.sea9.android.woc.settings.SettingsManager
 import java.lang.RuntimeException
 

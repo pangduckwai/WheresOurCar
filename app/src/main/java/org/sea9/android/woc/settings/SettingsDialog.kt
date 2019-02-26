@@ -6,6 +6,7 @@ import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
@@ -17,7 +18,7 @@ import org.sea9.android.woc.data.TokenAdaptor
 
 class SettingsDialog : DialogFragment() {
 	companion object {
-		const val TAG = "woc.about"
+		const val TAG = "woc.settings"
 		private const val PATTERN = "^[a-zA-Z_0-9.-]+[@][a-zA-Z0-9.]+?[.][a-zA-Z]{2,}$"
 
 		fun getInstance() : SettingsDialog {
@@ -166,6 +167,10 @@ class SettingsDialog : DialogFragment() {
 		updateUi()
 	}
 	private fun updateUi() {
+		val tmp = callback?.getSettingsManager()
+		if (tmp != null)
+			Log.w(TAG, "[Dialog] Mode: ${tmp.operationMode}; Status: ${tmp.subscriptionStatus}; ID: ${tmp.publisherId ?: "[NULL]"}")
+
 		val mode = callback?.getSettingsManager()?.operationMode
 		val status = callback?.getSettingsManager()?.subscriptionStatus
 
