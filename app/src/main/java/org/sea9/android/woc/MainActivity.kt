@@ -18,6 +18,7 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.ui.AboutDialog
 import org.sea9.android.ui.MessageDialog
 import org.sea9.android.woc.data.TokenAdaptor
+import org.sea9.android.woc.data.TokenRecord
 import org.sea9.android.woc.messaging.SubscribeDialog
 import org.sea9.android.woc.settings.SettingsDialog
 import org.sea9.android.woc.settings.SettingsManager
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
 		const val MSG_DIALOG_NOTIFY  = 90001
 		const val MSG_DIALOG_NEW_VEHICLE = 90002
 		const val MSG_DIALOG_PENDING_UPDATE = 90003
+		const val MSG_DIALOG_DELETE_TOKEN = 90004
 	}
 
 	private lateinit var retainedContext: MainContext
@@ -390,6 +392,18 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
 		return retainedContext.getSettingsManager()
 	}
 
+	override fun onConfirmRemoveSubscriber(record: TokenRecord) {
+		val bundle = Bundle()
+		bundle.putString(SettingsManager.KEY_TOKEN, record.token)
+		bundle.putString(SettingsManager.KEY_SUB, record.subscriber)
+		MessageDialog.getInstance(MSG_DIALOG_DELETE_TOKEN, bundle, 6, null,
+			getString(R.string.msg_pub_delete_token, record.subscriber, "${record.token.substring(0, 50)}..."), null,
+			getString(R.string.label_yes),
+			getString(R.string.label_no))
+			.show(supportFragmentManager, MessageDialog.TAG)
+		dialogShowing = true
+	}
+
 	/*==============================================================
 	 * @see org.sea9.android.woc.messaging.SubscribeDialog.Callback
 	 */
@@ -432,6 +446,13 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
 				retainedContext.resetStatus()
 				retainedContext.switchVehicle(vehicle)
 			}
+			MSG_DIALOG_DELETE_TOKEN -> {
+				dialogShowing = false
+				dialog?.dismiss()
+				bundle?.getString(SettingsManager.KEY_TOKEN)?.let {
+					retainedContext.deleteToken(it)
+				}
+			}
 		}
 	}
 
@@ -445,6 +466,9 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
 			MSG_DIALOG_PENDING_UPDATE -> {
 				doNotify(getString(R.string.msg_ui_retaining))
 				retainedContext.populateCurrent(null)
+			}
+			MSG_DIALOG_DELETE_TOKEN -> {
+				retainedContext.tokenAdaptor.notifyDataSetChanged()
 			}
 		}
 		dialogShowing = false

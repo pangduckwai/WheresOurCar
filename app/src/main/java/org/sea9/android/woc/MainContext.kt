@@ -105,7 +105,7 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		status = STATUS_NORMAL
 	}
 
-	private lateinit var currentVehicle: VehicleRecord
+	private var currentVehicle = VehicleRecord()
 	fun updateParking(parking: String) {
 		if (parking != currentVehicle.parking) {
 			Log.d(TAG, "updateParking $parking...")
@@ -264,6 +264,11 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 
 	lateinit var tokenAdaptor: TokenAdaptor
 		private set
+	fun deleteToken(token: String) {
+		DbContract.Token.delete(dbHelper!!, token)
+		tokenAdaptor.populateCache()
+		tokenAdaptor.notifyDataSetChanged()
+	}
 
 	fun subscribes(publisher: String, subscriber: String) {
 		if (settingsManager.deviceToken == null) { // No token yet, obtaining one...
@@ -343,8 +348,16 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
 		settingsManager = SettingsManager(context)
-		publishingUtils = PublishingUtils(this)
 		tokenAdaptor = TokenAdaptor(this)
+
+		val projectId = getString(R.string.firebase_project_id)
+		publishingUtils = PublishingUtils(
+			this, projectId,
+			getString(R.string.firebase_account_key),
+			getString(R.string.firebase_scope_fcm),
+			getString(R.string.firebase_endpoint_fcm, projectId),
+			getString(R.string.firebase_succeed_fcm)
+		)
 	}
 
 	override fun onResume() {

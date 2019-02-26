@@ -164,7 +164,14 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
 		settingsManager = SettingsManager(context)
-		publishingUtils = PublishingUtils(this)
+
+		val projectId = getString(R.string.firebase_project_id)
+		publishingUtils = PublishingUtils(this, projectId,
+			getString(R.string.firebase_account_key),
+			getString(R.string.firebase_scope_fcm),
+			getString(R.string.firebase_endpoint_fcm, projectId),
+			getString(R.string.firebase_succeed_fcm)
+		)
 	}
 
 	override fun onResume() {

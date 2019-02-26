@@ -6,7 +6,7 @@ import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
+import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageButton
@@ -15,6 +15,7 @@ import android.widget.TextView
 import org.sea9.android.woc.MainActivity
 import org.sea9.android.woc.R
 import org.sea9.android.woc.data.TokenAdaptor
+import org.sea9.android.woc.data.TokenRecord
 
 class SettingsDialog : DialogFragment() {
 	companion object {
@@ -121,6 +122,21 @@ class SettingsDialog : DialogFragment() {
 		recycler.setHasFixedSize(true)
 		recycler.layoutManager = LinearLayoutManager(context)
 
+		val itemTouchHelper =
+			ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+				override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, viewHolder1: RecyclerView.ViewHolder): Boolean {
+					return false
+				}
+
+				override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+					val record = callback?.getAdaptor()?.getRecord(viewHolder.adapterPosition)
+					if (record != null) {
+						callback?.onConfirmRemoveSubscriber(record)
+					}
+				}
+			})
+		itemTouchHelper.attachToRecyclerView(recycler)
+
 		dialog.setOnKeyListener { _, keyCode, event ->
 			if ((keyCode == KeyEvent.KEYCODE_BACK) && (event.action == KeyEvent.ACTION_UP)) {
 				close()
@@ -167,10 +183,6 @@ class SettingsDialog : DialogFragment() {
 		updateUi()
 	}
 	private fun updateUi() {
-		val tmp = callback?.getSettingsManager()
-		if (tmp != null)
-			Log.w(TAG, "[Dialog] Mode: ${tmp.operationMode}; Status: ${tmp.subscriptionStatus}; ID: ${tmp.publisherId ?: "[NULL]"}")
-
 		val mode = callback?.getSettingsManager()?.operationMode
 		val status = callback?.getSettingsManager()?.subscriptionStatus
 
@@ -206,6 +218,7 @@ class SettingsDialog : DialogFragment() {
 		fun getAdaptor(): TokenAdaptor
 		fun getSettingsManager(): SettingsManager
 		fun doNotify(msg: String?)
+		fun onConfirmRemoveSubscriber(record: TokenRecord)
 	}
 	private var callback: Callback? = null
 

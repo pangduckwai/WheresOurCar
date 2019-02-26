@@ -6,7 +6,6 @@ import android.os.AsyncTask
 import android.util.Log
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import org.json.JSONObject
-import org.sea9.android.woc.R
 import org.sea9.android.woc.RetainedContext
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.VehicleRecord
@@ -16,21 +15,29 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 
-class PublishingUtils(private val caller: RetainedContext) {
+class PublishingUtils(
+	private val caller: RetainedContext,
+	private val projectId: String,
+	private val keyFile: String,
+	private val scopeUrl: String,
+	private val fbEndpoint: String,
+	private val fbPattern: String
+) {
 	companion object {
 		const val TAG = "woc.publish"
 		private const val JSON_MESSAGE = "message"
 		private const val JSON_DATA = "data"
 		private const val JSON_TOKEN = "token"
 
-		fun getPlayAccessToken(context: Context?): String? {
+		fun getPlayAccessToken(context: Context?, keyFile: String, scopeUrl: String): String? {
+			Log.w(TAG, "Key: '$keyFile' | Scope: '$scopeUrl'")
 			return if (context == null) {
 				null
 			} else {
 				GoogleCredential.fromStream(
-					context.assets?.open(context.getString(R.string.firebase_account_key))
+					context.assets?.open(keyFile)
 				).createScoped(
-					listOf(context.getString(R.string.firebase_scope_fcm))
+					listOf(scopeUrl)
 				)?.let {
 					it.refreshToken()
 					it.accessToken
@@ -42,6 +49,8 @@ class PublishingUtils(private val caller: RetainedContext) {
 	fun publish(record: VehicleRecord?) {
 		if (record == null) return
 		if (!caller.getSettingsManager().isPublisher()) return
+		if (caller.getDbHelper() == null) return
+		if (record.name.isBlank() || record.parking.isBlank()) return
 
 		val data = JSONObject()
 		data.put(VehicleRecord.NAM, record.name)
@@ -62,9 +71,16 @@ class PublishingUtils(private val caller: RetainedContext) {
 				messages[index] = it
 			}
 		}
-		AsyncPublishTask(caller).execute(*messages)
+		AsyncPublishTask(caller, projectId, keyFile, scopeUrl, fbEndpoint, fbPattern).execute(*messages)
 	}
-	private class AsyncPublishTask(private val caller: RetainedContext): AsyncTask<JSONObject, Void, Void?>() {
+	private class AsyncPublishTask(
+		private val caller: RetainedContext,
+		private val projectId: String,
+		private val keyFile: String,
+		private val scopeUrl: String,
+		private val fbEndpoint: String,
+		private val fbPattern: String
+	): AsyncTask<JSONObject, Void, Void?>() {
 		companion object {
 			private const val METHOD = "POST"
 			private const val CNTENT = "Content-Type"
@@ -137,9 +153,8 @@ class PublishingUtils(private val caller: RetainedContext) {
 		override fun doInBackground(vararg params: JSONObject?): Void? {
 			if (params.isEmpty()) return null
 
-			val projectId = caller.getContext()?.getString(R.string.firebase_project_id)
-			val url = URL(caller.getContext()?.getString(R.string.firebase_endpoint_fcm, projectId))
-			val pattern = caller.getContext()?.getString(R.string.firebase_succeed_fcm)!!.toRegex()
+			val url = URL(String.format(fbEndpoint, projectId))
+			val pattern = fbPattern.toRegex()
 			params.forEach { param ->
 				if (isCancelled) return@forEach
 
@@ -152,7 +167,7 @@ class PublishingUtils(private val caller: RetainedContext) {
 				var count = 1
 				var backoff = INIT_BACKOFF_DELAY
 				val rand = Random()
-				while (!httpRequest(url, getPlayAccessToken(caller.getContext()), param, projectId!!, pattern) &&
+				while (!httpRequest(url, getPlayAccessToken(caller.getContext(), keyFile, scopeUrl), param, projectId, pattern) &&
 					(count < RETRY) && (backoff < (MAX_BACKOFF_DELAY/2))) {
 					val sleep = (backoff / 2 + rand.nextInt(backoff)).toLong()
 					Log.w(TAG, "Failed publishing $param, retry #$count in ${sleep}ms")

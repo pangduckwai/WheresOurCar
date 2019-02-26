@@ -17,6 +17,12 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 	private lateinit var recyclerView: RecyclerView
 
 	private var cache: MutableList<TokenRecord> = mutableListOf()
+	fun getRecord(position: Int): TokenRecord? {
+		return if ((position >= 0) && (position < cache.size))
+			cache[position]
+		else
+			null
+	}
 
 	/*=====================================================
 	 * @see android.support.v7.widget.RecyclerView.Adapter
@@ -45,7 +51,9 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 	 * Data access methods.
 	 */
 	fun populateCache() {
-		cache = DbContract.Token.select(caller.getDbHelper()!!) as MutableList<TokenRecord>
+		caller.getDbHelper()?.let {
+			cache = DbContract.Token.select(it) as MutableList<TokenRecord>
+		}
 	}
 
 	fun clearCache() {
