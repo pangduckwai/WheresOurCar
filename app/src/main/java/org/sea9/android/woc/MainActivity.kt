@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity(), Observer
 	}
 
 	private fun updateUi() {
-		if (retainedContext.settingsManager.isSubscriber()) {
+		if (retainedContext.getSettingsManager().isSubscriber()) {
 			fab.isEnabled = false
 			buttonVehicle.isEnabled = false
 			buttonParking.isEnabled = false
@@ -292,7 +292,7 @@ class MainActivity : AppCompatActivity(), Observer
 			clearKeyboard(view)
 		}
 
-		if (retainedContext.settingsManager.isSubscriber()) {
+		if (retainedContext.getSettingsManager().isSubscriber()) {
 			textFloor.filters = arrayOf()
 			textLot.filters = arrayOf()
 			textVehicle.filters = arrayOf()
@@ -311,7 +311,7 @@ class MainActivity : AppCompatActivity(), Observer
 				Date())
 		)
 
-		if (retainedContext.settingsManager.isSubscriber()) {
+		if (retainedContext.getSettingsManager().isSubscriber()) {
 			textFloor.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
 			textLot.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
 			textVehicle.filters = arrayOf(InputFilter { _, _, _, dst, start, end -> dst.subSequence(start, end) })
@@ -364,7 +364,7 @@ class MainActivity : AppCompatActivity(), Observer
 
 	override fun onModeChanged(mode: SettingsManager.MODE) {
 		retainedContext.publish()
-		retainedContext.settingsManager.updateMode(mode)
+		retainedContext.getSettingsManager().updateMode(mode)
 	}
 
 	override fun subscribes(mode: SettingsManager.MODE, publisher: String, subscriber: String) {
@@ -376,7 +376,7 @@ class MainActivity : AppCompatActivity(), Observer
 	}
 
 	override fun getSettingsManager(): SettingsManager {
-		return retainedContext.settingsManager
+		return retainedContext.getSettingsManager()
 	}
 
 	/*=================================================
@@ -468,7 +468,7 @@ class MainActivity : AppCompatActivity(), Observer
 					}
 				}
 			} else if (it.hasExtra(SettingsManager.KEY_TOKEN)) {
-				retainedContext.settingsManager.notifyPublisher(it.getStringExtra(SettingsManager.KEY_TOKEN))
+				retainedContext.getSettingsManager().notifyPublisher(it.getStringExtra(SettingsManager.KEY_TOKEN))
 			}
 		}
 	}

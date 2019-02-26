@@ -56,8 +56,13 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 
 	<string name="msg_subscribe_okay">Subscription request from</string>
 	<string name="msg_subscribe_fail">Subscription already exists</string>
-	<string name="msg_unsubscribe_okay">Unsubscribe request from</string>
-	<string name="msg_unsubscribe_fail">Subscription not found</string>
+	<string name="msg_subscribe_succeed">Subscription approved</string>
+	<string name="msg_subscribe_failed">Approve subscription failed</string>
+	<string name="msg_unsubscribe_pending">Unsubscribe request from</string>
+	<string name="msg_unsubscribe_notfound">Subscription not found</string>
+	<string name="msg_unsubscribe_succeed">Unsubscribed successfully</string>
+	<string name="msg_unsubscribe_failed">Unsubscribe failed</string>
+	<string name="msg_not_a_publisher">Not a publisher, ignoring subscription request</string>
 
 	<string name="sub_email_title">Where\'s Our Car subscription request</string>
 	<string name="sub_email_chooser">Sending subscription request…</string>

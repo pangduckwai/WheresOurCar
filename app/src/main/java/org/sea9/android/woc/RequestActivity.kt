@@ -1,19 +1,21 @@
 package org.sea9.android.woc
 
-import android.content.Intent
+import android.content.DialogInterface
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Gravity
-import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.app_main.*
+import org.sea9.android.ui.MessageDialog
 import java.lang.RuntimeException
 
-class RequestActivity : AppCompatActivity(), RequestContext.Callback {
+class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDialog.Callback {
 	companion object {
 		const val TAG = "woc.request"
+		private const val EMPTY = ""
+		const val MSG_DIALOG_IGNORE_SUBSCRIBE = 80001
 	}
 
 	private lateinit var retainedContext: RequestContext
@@ -36,26 +38,20 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback {
 			when {
 				((retainedContext.status and 1) > 0) -> {
 					if (okay) {
-						// Unsubscribe
+						retainedContext.unsubscribe()
 					} else {
-						val obj = Toast.makeText(this, getString(R.string.msg_unsubscribe_fail), Toast.LENGTH_LONG )
-						obj.setGravity(Gravity.TOP, 0, 0)
-						obj.show()
+						doNotify(0, getString(R.string.msg_unsubscribe_notfound), false)
 					}
 				}
 				((retainedContext.status and 2) > 0) -> {
 					if (okay) {
-						// Subscribe
+						retainedContext.subscribe()
 					} else {
-						val obj = Toast.makeText(this, getString(R.string.msg_unsubscribe_fail), Toast.LENGTH_LONG )
-						obj.setGravity(Gravity.TOP, 0, 0)
-						obj.show()
+						doNotify(0, getString(R.string.msg_subscribe_fail), false)
 					}
 				}
 				else -> {
-					val obj = Toast.makeText(this, "", Toast.LENGTH_LONG )
-					obj.setGravity(Gravity.TOP, 0, 0)
-					obj.show()
+					Log.w(TAG, "Should not be able to click...")
 				}
 			}
 		}
@@ -71,10 +67,10 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback {
 		when {
 			((status and 1) > 0) -> {
 				if (okay) {
-					textTitle.text = getString(R.string.msg_unsubscribe_okay)
+					textTitle.text = getString(R.string.msg_unsubscribe_pending)
 					fab.isEnabled = true
 				} else {
-					textTitle.text = getString(R.string.msg_unsubscribe_fail)
+					textTitle.text = getString(R.string.msg_unsubscribe_notfound)
 					fab.isEnabled = false
 				}
 			}
@@ -91,5 +87,27 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback {
 				throw RuntimeException("Error encountered when processing incoming requests")
 			}
 		}
+	}
+
+	override fun doNotify(ref: Int, msg: String?, stay: Boolean) {
+		if (stay || ((msg != null) && (msg.length > 70))) {
+			MessageDialog.getInstance(ref, msg ?: EMPTY, null).show(supportFragmentManager, MessageDialog.TAG)
+		} else {
+			val obj = Toast.makeText(this, msg, Toast.LENGTH_LONG )
+			obj.setGravity(Gravity.TOP, 0, 0)
+			obj.show()
+		}
+	}
+
+	override fun neutral(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when(reference) {
+			MSG_DIALOG_IGNORE_SUBSCRIBE -> finish()
+		}
+	}
+
+	override fun positive(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+	}
+
+	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
 	}
 }

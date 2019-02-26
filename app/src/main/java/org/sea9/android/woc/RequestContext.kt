@@ -9,10 +9,10 @@ import android.support.v4.app.FragmentManager
 import android.util.Log
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
-import org.sea9.android.woc.data.TokenRecord
+import org.sea9.android.woc.messaging.PublishingUtils
 import java.lang.RuntimeException
 
-class RequestContext: Fragment(), DbHelper.Caller {
+class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.request_retained"
 		private const val URL_TOKEN = "t"
@@ -30,7 +30,12 @@ class RequestContext: Fragment(), DbHelper.Caller {
 		}
 	}
 
-	lateinit var settingsManager: SettingsManager
+	private lateinit var settingsManager: SettingsManager
+	override fun getSettingsManager(): SettingsManager {
+		return settingsManager
+	}
+
+	private lateinit var publishingUtils: PublishingUtils
 
 	var isSubscribe = false
 		private set
@@ -51,42 +56,10 @@ class RequestContext: Fragment(), DbHelper.Caller {
 		}
 	}
 
-	var tokenList: List<String>? = null
-	fun populate() {
-		tokenList = DbContract.Token.select(dbHelper!!).map {
-			it.token
-		}.toList()
-	}
-
-	var status: Int = 0
-		private set
-	private fun process() {
-		AsyncProcessTask(this).execute()
-	}
-	private class AsyncProcessTask(private val caller: RequestContext): AsyncTask<Void, Void, Int>() {
-		override fun doInBackground(vararg params: Void?): Int {
-			var result = 0
-			if ((caller.tokenList != null) && caller.tokenList!!.isNotEmpty()) {
-				result = if (caller.isSubscribe)
-					2 //Is subscribe
-				else
-					1 //Is unsubscribe
-
-				val found = caller.tokenList?.contains(caller.token) ?: false
-				if ((caller.isSubscribe && !found) || (!caller.isSubscribe && found))
-					result = result or 4
-			}
-			return result //000 - Okay|Subscribe|Unsubscribe
-		}
-		override fun onPostExecute(result: Int?) {
-			caller.status = result ?: 0
-			caller.activity?.runOnUiThread {
-				caller.callback?.onProcessed(result ?: 0)
-			}
-		}
-	}
-
 	private var dbHelper: DbHelper? = null
+	override fun getDbHelper(): DbHelper? {
+		return dbHelper
+	}
 	private fun setDbHelper(helper: DbHelper) {
 		dbHelper = helper
 	}
@@ -115,11 +88,81 @@ class RequestContext: Fragment(), DbHelper.Caller {
 		}
 	}
 
+	var tokenList: List<String>? = null
+	fun populate() {
+		tokenList = DbContract.Token.select(dbHelper!!).map {
+			it.token
+		}.toList()
+	}
+
+	var status: Int = 0
+		private set
+	private fun process() {
+		if (!settingsManager.isPublisher()) {
+			callback?.doNotify(RequestActivity.MSG_DIALOG_IGNORE_SUBSCRIBE, getString(R.string.msg_not_a_publisher), true)
+		} else {
+			AsyncProcessTask(this).execute()
+		}
+	}
+	private class AsyncProcessTask(private val caller: RequestContext): AsyncTask<Void, Void, Int>() {
+		override fun onPreExecute() {
+			if (caller.tokenList == null) caller.populate()
+		}
+		override fun doInBackground(vararg params: Void?): Int {
+			var result = 0
+			if (caller.tokenList != null) {
+				result = if (caller.isSubscribe)
+					2 //Is subscribe
+				else
+					1 //Is unsubscribe
+
+				val found = if (caller.tokenList!!.isNotEmpty())
+					caller.tokenList!!.contains(caller.token)
+				else
+					false
+
+				if ((caller.isSubscribe && !found) || (!caller.isSubscribe && found))
+					result = result or 4
+			}
+			return result //000 - Okay|Subscribe|Unsubscribe
+		}
+		override fun onPostExecute(result: Int?) {
+			caller.status = result ?: 0
+			caller.activity?.runOnUiThread {
+				caller.callback?.onProcessed(result ?: 0)
+			}
+		}
+	}
+
+	fun subscribe() {
+		if (token != null) {
+			if (DbContract.Token.insert(dbHelper!!, subscriber!!, token!!) >= 0) {
+				publishingUtils.publish(DbContract.Vehicle.select(dbHelper!!))
+				callback?.doNotify(0, getString(R.string.msg_subscribe_succeed), false)
+				activity?.finish()
+				return
+			}
+		}
+		callback?.doNotify(0, getString(R.string.msg_subscribe_failed), false)
+	}
+
+	fun unsubscribe() {
+		if (token != null) {
+			if (DbContract.Token.delete(dbHelper!!, token!!) == 1) {
+				callback?.doNotify(0, getString(R.string.msg_unsubscribe_succeed), false)
+				activity?.finish()
+				return
+			}
+		}
+		callback?.doNotify(0, getString(R.string.msg_unsubscribe_failed), false)
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")
 		retainInstance = true
 		settingsManager = SettingsManager(context)
+		publishingUtils = PublishingUtils(this)
 	}
 
 	override fun onResume() {
@@ -129,7 +172,7 @@ class RequestContext: Fragment(), DbHelper.Caller {
 		if (!isDbReady()) {
 			initDb()
 		} else {
-			populate()
+			process()
 		}
 	}
 
@@ -144,6 +187,7 @@ class RequestContext: Fragment(), DbHelper.Caller {
 
 	interface Callback {
 		fun onProcessed(status: Int)
+		fun doNotify(ref: Int, msg: String?, stay: Boolean)
 	}
 	private var callback: Callback? = null
 
