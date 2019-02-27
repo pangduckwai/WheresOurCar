@@ -2,8 +2,10 @@ package org.sea9.android.woc
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.database.SQLException
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
@@ -18,6 +20,7 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.woc.messaging.PublishingUtils
 import org.sea9.android.woc.settings.SettingsManager
 import java.lang.RuntimeException
+import java.lang.StringBuilder
 
 class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Caller {
 	companion object {
@@ -301,6 +304,26 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 				}
 			}
 		}
+	}
+
+	/*=============
+	 * Key related
+	 */
+	@Suppress("DEPRECATION")
+	@SuppressLint("PackageManagerGetSignatures")
+	fun getKey(): String? {
+		context?.let {
+			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
+			} else {
+				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
+			}
+			val buffer = StringBuilder()
+			signatures.forEach {s ->
+				buffer.append(s.toCharsString())
+			}
+			return buffer.toString()
+		} ?: return null
 	}
 
 	/*=========================
