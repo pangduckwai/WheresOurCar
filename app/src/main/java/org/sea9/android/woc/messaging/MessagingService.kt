@@ -1,10 +1,15 @@
 package org.sea9.android.woc.messaging
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.json.JSONObject
+import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.woc.MainActivity
 import org.sea9.android.woc.MainWidget
 import org.sea9.android.woc.MainContext
@@ -17,6 +22,7 @@ import java.lang.RuntimeException
 class MessagingService: FirebaseMessagingService() {
 	companion object {
 		const val TAG = "woc.fcm"
+		private const val EMPTY = ""
 	}
 
 	/**
@@ -37,6 +43,26 @@ class MessagingService: FirebaseMessagingService() {
 		}
 	}
 
+	/*=============
+	 * Key related
+	 */
+	@Suppress("DEPRECATION")
+	@SuppressLint("PackageManagerGetSignatures")
+	fun getKey(): CharArray {
+		var buffer = CharArray(0)
+		this.let {
+			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
+			} else {
+				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
+			}
+			signatures.forEach {s ->
+				buffer += s.toChars()
+			}
+		}
+		return buffer
+	}
+
 	override fun onMessageReceived(remoteMessage: RemoteMessage?) {
 		val settingsManager = SettingsManager(this)
 
@@ -48,11 +74,18 @@ class MessagingService: FirebaseMessagingService() {
 				}
 
 				if (remoteMessage?.data?.isNotEmpty() == true) {
-					val veh = remoteMessage.data[VehicleRecord.NAM]
-					val prk = remoteMessage.data[VehicleRecord.PRK]
-					val flr = remoteMessage.data[VehicleRecord.FLR]
-					val lot = remoteMessage.data[VehicleRecord.LOT]
-					val mod = remoteMessage.data[VehicleRecord.MOD]
+					val slt = remoteMessage.data[PublishingUtils.JSON_SALT]
+					val srt = remoteMessage.data[PublishingUtils.JSON_SECRET]
+					if ((slt == null) || (srt == null)) return
+					val salt = KryptoUtils.decode(KryptoUtils.convert(slt.toCharArray())!!)
+					val secret = KryptoUtils.decrypt(srt.toCharArray(), getKey(), salt)
+
+					val json = JSONObject(secret?.joinToString(EMPTY))
+					val veh = json.optString(VehicleRecord.NAM)
+					val prk = json.optString(VehicleRecord.PRK)
+					val flr = json.optString(VehicleRecord.FLR)
+					val lot = json.optString(VehicleRecord.LOT)
+					val mod = json.optString(VehicleRecord.MOD)
 
 					val helper = DbHelper(object : DbHelper.Caller {
 						override fun getContext(): Context? {

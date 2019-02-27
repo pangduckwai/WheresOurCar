@@ -13,6 +13,7 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
+import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.TokenAdaptor
@@ -20,7 +21,6 @@ import org.sea9.android.woc.data.VehicleRecord
 import org.sea9.android.woc.messaging.PublishingUtils
 import org.sea9.android.woc.settings.SettingsManager
 import java.lang.RuntimeException
-import java.lang.StringBuilder
 
 class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Caller {
 	companion object {
@@ -311,19 +311,19 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 	 */
 	@Suppress("DEPRECATION")
 	@SuppressLint("PackageManagerGetSignatures")
-	fun getKey(): String? {
+	override fun getKey(): CharArray {
+		var buffer = CharArray(0)
 		context?.let {
 			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
 				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
 			} else {
 				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
 			}
-			val buffer = StringBuilder()
 			signatures.forEach {s ->
-				buffer.append(s.toCharsString())
+				buffer += s.toChars()
 			}
-			return buffer.toString()
-		} ?: return null
+		}
+		return buffer
 	}
 
 	/*=========================

@@ -6,6 +6,7 @@ import android.os.AsyncTask
 import android.util.Log
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import org.json.JSONObject
+import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.woc.RetainedContext
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.VehicleRecord
@@ -25,6 +26,8 @@ class PublishingUtils(
 ) {
 	companion object {
 		const val TAG = "woc.publish"
+		const val JSON_SALT = "salt"
+		const val JSON_SECRET = "secret"
 		private const val JSON_MESSAGE = "message"
 		private const val JSON_DATA = "data"
 		private const val JSON_TOKEN = "token"
@@ -33,6 +36,7 @@ class PublishingUtils(
 		private const val CNTENT = "Content-Type"
 		private const val JSONU8 = "application/json; UTF-8"
 		private const val AUTHZN = "Authorization"
+		private const val EMPTY = ""
 
 		private fun httpRequest(url: URL, oauthToken: String?, obj: JSONObject, projectId: String, pattern: Regex): Boolean {
 			// The doc said each HttpURLConnection instance is used to make a single request
@@ -102,9 +106,14 @@ class PublishingUtils(
 
 		val tokens = DbContract.Token.select(retainedContext.getDbHelper()!!)
 		tokens.forEach { token ->
+			val salt = KryptoUtils.generateSalt() //Use a different salt for each subscriber
+			val secret = KryptoUtils.encrypt(data.toString().toCharArray(), retainedContext.getKey(), salt)
+			val payload = JSONObject()
+			payload.put(JSON_SALT, KryptoUtils.convert(KryptoUtils.encode(salt))?.joinToString(EMPTY))
+			payload.put(JSON_SECRET, secret?.joinToString(EMPTY))
 			val body = JSONObject()
 			body.put(JSON_TOKEN, token.token)
-			body.put(JSON_DATA, data)
+			body.put(JSON_DATA, payload)
 			JSONObject().put(JSON_MESSAGE, body).also {
 				Log.w(TAG, "Publishing message $it...")
 			}.also {

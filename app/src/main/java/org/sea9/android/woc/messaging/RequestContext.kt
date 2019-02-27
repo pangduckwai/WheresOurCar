@@ -159,6 +159,10 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 		callback?.doNotify(0, getString(R.string.msg_unsubscribe_failed), false)
 	}
 
+	override fun getKey(): CharArray {
+		return CharArray(0)
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		Log.d(TAG, "onCreate()")

@@ -16,7 +16,7 @@ class KryptoUtils {
 		private const val TAG = "sea9.krypto"
 		private const val DEFAULT_CHARSET = "UTF-8"
 		private const val DEFAULT_PBE_ALGORITHM = "PBEWITHSHA-256AND192BITAES-CBC-BC"
-		private const val DEFAULT_HASH_ALGORITHM = "SHA-256"
+//		private const val DEFAULT_HASH_ALGORITHM = "SHA-256"
 		private const val DEFAULT_ITERATION = 2048
 		private const val DEFAULT_SALT_LENGTH = 512
 
@@ -28,7 +28,7 @@ class KryptoUtils {
 			return convert(doCipher(decode(convert(secret)!!), PBEKeySpec(password), PBEParameterSpec(salt, DEFAULT_ITERATION), false))
 		}
 
-		fun doCipher(message: ByteArray, keySpec: KeySpec, paramSpec: AlgorithmParameterSpec, isEncrypt: Boolean): ByteArray {
+		private fun doCipher(message: ByteArray, keySpec: KeySpec, paramSpec: AlgorithmParameterSpec, isEncrypt: Boolean): ByteArray {
 			try {
 				val factory = SecretKeyFactory.getInstance(DEFAULT_PBE_ALGORITHM)
 				val key = factory.generateSecret(keySpec)
@@ -52,16 +52,16 @@ class KryptoUtils {
 			}
 		}
 
-		fun hash(input: ByteArray): ByteArray? {
-			try {
-				val digest = MessageDigest.getInstance(DEFAULT_HASH_ALGORITHM)
-				digest.reset()
-				return digest.digest(input)
-			} catch (e: NoSuchAlgorithmException) {
-				Log.w(TAG, e.message)
-				return null
-			}
-		}
+//		fun hash(input: ByteArray): ByteArray? {
+//			try {
+//				val digest = MessageDigest.getInstance(DEFAULT_HASH_ALGORITHM)
+//				digest.reset()
+//				return digest.digest(input)
+//			} catch (e: NoSuchAlgorithmException) {
+//				Log.w(TAG, e.message)
+//				return null
+//			}
+//		}
 
 		fun generateSalt(): ByteArray {
 			val buffer = ByteArray(DEFAULT_SALT_LENGTH)
