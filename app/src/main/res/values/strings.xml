@@ -69,7 +69,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_not_a_publisher">Not a publisher, ignoring subscription request</string>
 	<string name="msg_accept_title">Received subscription approval from</string>
 	<string name="msg_accept_time">Request made on</string>
-	<string name="sub_email_title">Where\'s Our Car subscription request</string>
+	<string name="sub_email_title">Where\'s Our Car subscription request (%s)</string>
 	<string name="sub_email_chooser">Sending subscription request…</string>
 	<string name="sub_email_subscribe"  >http://sea9.org/woc/s?t=%s&amp;c=%s</string>
 	<string name="sub_email_unsubscribe">http://sea9.org/woc/u?t=%s</string>

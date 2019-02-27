@@ -8,7 +8,9 @@ import android.view.Gravity
 import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import org.sea9.android.woc.MainContext
 import org.sea9.android.woc.R
+import java.text.SimpleDateFormat
 import java.util.*
 
 class SettingsManager(private val context: Context?) {
@@ -20,7 +22,7 @@ class SettingsManager(private val context: Context?) {
 		const val KEY_SUB = "woc.subscriber"
 		const val KEY_PID = "woc.publisher.id"
 		const val KEY_STATUS = "woc.publisher.statue"
-		const val KEY_MOD = "woc.subscritpion.submitted"
+		const val KEY_MOD = "woc.subscription.submitted"
 		private const val CONTENT_TYPE = "plain/text"
 		private const val MAIL_TO = "mailto:"
 		private const val EMPTY = ""
@@ -58,11 +60,13 @@ class SettingsManager(private val context: Context?) {
 		}
 
 		private fun sendMail(context: Context?, isSubscribe: Boolean, publisher: String, subscriber: String, token: String) {
+			val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
 			val intent = Intent(Intent.ACTION_SENDTO)
 			intent.type = CONTENT_TYPE
 			intent.data = Uri.parse(MAIL_TO)
 			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(publisher))
-			intent.putExtra(android.content.Intent.EXTRA_SUBJECT, context?.getString(R.string.sub_email_title))
+			intent.putExtra(android.content.Intent.EXTRA_SUBJECT
+				, context?.getString(R.string.sub_email_title, formatter.format(Date())))
 			intent.putExtra(android.content.Intent.EXTRA_TEXT,
 				if (isSubscribe)
 					context?.getString(R.string.sub_email_subscribe, token, subscriber)
