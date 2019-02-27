@@ -189,7 +189,7 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 						populateCurrent(null, true)
 						if ((result and 8) > 0) populateVehicleList()
 						resetStatus()
-						publishingUtils.publish(currentVehicle)
+						publish()
 						callback?.onUpdated()
 						true
 					} else {

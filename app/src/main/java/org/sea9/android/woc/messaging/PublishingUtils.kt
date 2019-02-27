@@ -16,7 +16,7 @@ import java.net.URL
 import java.util.*
 
 class PublishingUtils(
-	private val caller: RetainedContext,
+	private val retainedContext: RetainedContext,
 	private val projectId: String,
 	private val keyFile: String,
 	private val scopeUrl: String,
@@ -28,12 +28,105 @@ class PublishingUtils(
 		private const val JSON_MESSAGE = "message"
 		private const val JSON_DATA = "data"
 		private const val JSON_TOKEN = "token"
+		private const val MSG_NOW = "now"
+		private const val METHOD = "POST"
+		private const val CNTENT = "Content-Type"
+		private const val JSONU8 = "application/json; UTF-8"
+		private const val AUTHZN = "Authorization"
 
-		fun getPlayAccessToken(context: Context?, keyFile: String, scopeUrl: String): String? {
-			Log.w(TAG, "Key: '$keyFile' | Scope: '$scopeUrl'")
-			return if (context == null) {
+		private fun httpRequest(url: URL, oauthToken: String?, obj: JSONObject, projectId: String, pattern: Regex): Boolean {
+			// The doc said each HttpURLConnection instance is used to make a single request
+			val buffer = obj.toString().toByteArray()
+			var connection: HttpURLConnection? = null
+
+			val result = try {
+				connection = url.openConnection() as HttpURLConnection
+				with(connection) {
+					doOutput = true
+					useCaches = false
+					setFixedLengthStreamingMode(buffer.size)
+					requestMethod = METHOD
+					setRequestProperty(CNTENT, JSONU8)
+					setRequestProperty(AUTHZN, "Bearer $oauthToken")
+
+					outputStream.apply {
+						try {
+							write(buffer)
+						} finally {
+							flush()
+							close()
+						}
+					}
+
+					if (responseCode / 100 == 2) {
+						inputStream.bufferedReader().use(BufferedReader::readText)
+					} else {
+						errorStream.bufferedReader().use(BufferedReader::readText)
+					}
+				}
+			} catch (e: Exception) {
+				Log.w(TAG, e)
 				null
-			} else {
+			} finally {
+				connection?.disconnect()
+			}
+
+			return if (result == null)
+				false
+			else {
+				Log.d(TAG, "Publishing response $result")
+				val match = pattern.find(result)
+				if (match?.groupValues?.get(1) == projectId) Log.w(TAG, "Publishing response $result")
+				match?.groupValues?.get(1) == projectId
+			}
+		}
+	}
+
+	private var accessToken: String? = null
+
+	fun publish(record: VehicleRecord?) {
+		if (record == null) return
+		if (!retainedContext.getSettingsManager().isPublisher()) return
+		if (retainedContext.getDbHelper() == null) return
+		if (record.name.isBlank() || record.parking.isBlank()) return
+		accessToken = null
+
+		val data = JSONObject()
+		val now = Date().time.toString()
+		data.put(VehicleRecord.NAM, record.name)
+		data.put(VehicleRecord.PRK, record.parking)
+		data.put(VehicleRecord.FLR, record.floor?: VehicleRecord.EMPTY)
+		data.put(VehicleRecord.LOT, record.lot?: VehicleRecord.EMPTY)
+		data.put(VehicleRecord.MOD, record.modified?.toString() ?: now)
+		data.put(MSG_NOW, now) // To make the message different everytime...
+
+		val tokens = DbContract.Token.select(retainedContext.getDbHelper()!!)
+		tokens.forEach { token ->
+			val body = JSONObject()
+			body.put(JSON_TOKEN, token.token)
+			body.put(JSON_DATA, data)
+			JSONObject().put(JSON_MESSAGE, body).also {
+				Log.w(TAG, "Publishing message $it...")
+			}.also {
+				// Need to start the thread here, otherwise won't run after the app shutdown
+				AsyncDispatchTask(this, projectId, String.format(fbEndpoint, projectId), fbPattern).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, it)
+			}
+		}
+		AsyncOAuthTask(this, keyFile, scopeUrl).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+	}
+
+	private class AsyncOAuthTask(
+		private val caller: PublishingUtils,
+		private val keyFile: String,
+		private val scopeUrl: String
+	): AsyncTask<Void, Void, Void>() {
+		override fun onPreExecute() {
+			if (!(caller.retainedContext.getContext()?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo.isConnected)
+				cancel(true)
+		}
+		override fun doInBackground(vararg params: Void?): Void? {
+			if (isCancelled) return null
+			caller.accessToken = caller.retainedContext.getContext()?.let { context ->
 				GoogleCredential.fromStream(
 					context.assets?.open(keyFile)
 				).createScoped(
@@ -43,141 +136,52 @@ class PublishingUtils(
 					it.accessToken
 				}
 			}
+			return null
 		}
 	}
-
-	fun publish(record: VehicleRecord?) {
-		if (record == null) return
-		if (!caller.getSettingsManager().isPublisher()) return
-		if (caller.getDbHelper() == null) return
-		if (record.name.isBlank() || record.parking.isBlank()) return
-
-		val data = JSONObject()
-		data.put(VehicleRecord.NAM, record.name)
-		data.put(VehicleRecord.PRK, record.parking)
-		data.put(VehicleRecord.FLR, record.floor?: VehicleRecord.EMPTY)
-		data.put(VehicleRecord.LOT, record.lot?: VehicleRecord.EMPTY)
-		data.put(VehicleRecord.MOD, (record.modified?: Date().time).toString())
-
-		val tokens = DbContract.Token.select(caller.getDbHelper()!!)
-		val messages = Array<JSONObject?>(tokens.size) { null }
-		tokens.forEachIndexed { index, token ->
-			val body = JSONObject()
-			body.put(JSON_TOKEN, token.token)
-			body.put(JSON_DATA, data)
-			JSONObject().put(JSON_MESSAGE, body).also {
-				Log.w(TAG, "Publishing message $it...")
-			}.also {
-				messages[index] = it
-			}
-		}
-		AsyncPublishTask(caller, projectId, keyFile, scopeUrl, fbEndpoint, fbPattern).execute(*messages)
-	}
-	private class AsyncPublishTask(
-		private val caller: RetainedContext,
+	private class AsyncDispatchTask(
+		private val caller: PublishingUtils,
 		private val projectId: String,
-		private val keyFile: String,
-		private val scopeUrl: String,
-		private val fbEndpoint: String,
+		private val urlString: String,
 		private val fbPattern: String
 	): AsyncTask<JSONObject, Void, Void?>() {
 		companion object {
-			private const val METHOD = "POST"
-			private const val CNTENT = "Content-Type"
-			private const val JSONU8 = "application/json; UTF-8"
-			private const val AUTHZN = "Authorization"
 			private const val RETRY = 5
 			private const val INIT_BACKOFF_DELAY = 1000
 			private const val MAX_BACKOFF_DELAY = 1024000
-
-			private fun httpRequest(url: URL, oauthToken: String?, obj: JSONObject, projectId: String, pattern: Regex): Boolean {
-				// The doc said each HttpURLConnection instance is used to make a single request
-				val buffer = obj.toString().toByteArray()
-				var connection: HttpURLConnection? = null
-
-				val result = try {
-					connection = url.openConnection() as HttpURLConnection
-					with(connection) {
-						doOutput = true
-						useCaches = false
-						setFixedLengthStreamingMode(buffer.size)
-						requestMethod = METHOD
-						setRequestProperty(CNTENT, JSONU8)
-						setRequestProperty(AUTHZN, "Bearer $oauthToken")
-
-						outputStream.apply {
-							try {
-								write(buffer)
-							} finally {
-								flush()
-								close()
-							}
-						}
-
-						when {
-							(responseCode / 100 == 5) -> {
-								null
-							}
-							(responseCode == 200) -> {
-								inputStream.bufferedReader().use(BufferedReader::readText)
-							}
-							else -> {
-								errorStream.bufferedReader().use(BufferedReader::readText)
-							}
-						}
-					}
-				} catch (e: Exception) {
-					Log.w(TAG, e)
-					null
-				} finally {
-					connection?.disconnect()
-				}
-
-				return if (result == null)
-					false
-				else {
-					Log.w(TAG, "Publishing response $result")
-					val match = pattern.find(result)
-					match?.groupValues?.get(1) == projectId
-				}
-			}
 		}
-
 		override fun onPreExecute() {
-			if (!(caller.getContext()
-					?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
-					.activeNetworkInfo.isConnected)
+			if (!(caller.retainedContext.getContext()?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo.isConnected)
 				cancel(true)
 		}
-
 		override fun doInBackground(vararg params: JSONObject?): Void? {
-			if (params.isEmpty()) return null
+			if (isCancelled || params.isEmpty() || (params[0] == null)) return null
 
-			val url = URL(String.format(fbEndpoint, projectId))
-			val pattern = fbPattern.toRegex()
-			params.forEach { param ->
-				if (isCancelled) return@forEach
-
-				// TODO TEMP - for debug
-				if (param?.getJSONObject(JSON_MESSAGE)?.getString(JSON_TOKEN)?.startsWith("0000000")!!) {
-					Log.w(TAG, "Testing token starting with '0000000' found, ignoring...")
-					return@forEach
+			var count = 0
+			while ((caller.accessToken == null) && (count < RETRY)) {
+				count ++
+				try {
+					Thread.sleep(INIT_BACKOFF_DELAY.toLong())
+				} catch (e: InterruptedException) {
+					Thread.currentThread().interrupt()
 				}
+			}
+			if (caller.accessToken == null) return null //Give up...
 
-				var count = 1
-				var backoff = INIT_BACKOFF_DELAY
-				val rand = Random()
-				while (!httpRequest(url, getPlayAccessToken(caller.getContext(), keyFile, scopeUrl), param, projectId, pattern) &&
-					(count < RETRY) && (backoff < (MAX_BACKOFF_DELAY/2))) {
-					val sleep = (backoff / 2 + rand.nextInt(backoff)).toLong()
-					Log.w(TAG, "Failed publishing $param, retry #$count in ${sleep}ms")
-					count ++
-					backoff *= 2
-					try {
-						Thread.sleep(sleep)
-					} catch (e: InterruptedException) {
-						Thread.currentThread().interrupt()
-					}
+			count = 0
+			val url = URL(urlString)
+			val pattern = fbPattern.toRegex()
+			var backoff = INIT_BACKOFF_DELAY
+			val rand = Random()
+			while (!httpRequest(url, caller.accessToken, params[0]!!, projectId, pattern) && (count < RETRY) && (backoff < (MAX_BACKOFF_DELAY/2))) {
+				val sleep = (backoff / 2 + rand.nextInt(backoff)).toLong()
+				Log.w(TAG, "Retry #$count in ${sleep}ms: failed publishing ${params[0]}")
+				count ++
+				backoff *= 2
+				try {
+					Thread.sleep(sleep)
+				} catch (e: InterruptedException) {
+					Thread.currentThread().interrupt()
 				}
 			}
 			return null
