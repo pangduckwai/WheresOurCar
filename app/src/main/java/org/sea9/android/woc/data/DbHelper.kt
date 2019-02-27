@@ -43,16 +43,16 @@ class DbHelper(private val caller: Caller, isTest: Boolean):
 		onCreate(db)
 	}
 
-	fun deleteDatabase() {
-		val dbName = databaseName
-		writableDatabase.execSQL(DbContract.Vehicle.SQL_DROP_IDX)
-		writableDatabase.execSQL(DbContract.Vehicle.SQL_DROP)
-		writableDatabase.execSQL(DbContract.Parking.SQL_DROP_IDX)
-		writableDatabase.execSQL(DbContract.Parking.SQL_DROP)
-		writableDatabase.execSQL(DbContract.Token.SQL_DROP)
-		caller.getContext()?.deleteDatabase(databaseName)
-		Log.i(TAG, "Database $dbName deleted")
-	}
+//	fun deleteDatabase() {
+//		val dbName = databaseName
+//		writableDatabase.execSQL(DbContract.Vehicle.SQL_DROP_IDX)
+//		writableDatabase.execSQL(DbContract.Vehicle.SQL_DROP)
+//		writableDatabase.execSQL(DbContract.Parking.SQL_DROP_IDX)
+//		writableDatabase.execSQL(DbContract.Parking.SQL_DROP)
+//		writableDatabase.execSQL(DbContract.Token.SQL_DROP)
+//		caller.getContext()?.deleteDatabase(databaseName)
+//		Log.i(TAG, "Database $dbName deleted")
+//	}
 
 	var ready: Boolean = false
 		private set

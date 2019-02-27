@@ -60,19 +60,6 @@ class TokenAdaptor(private val caller: Caller): RecyclerView.Adapter<TokenAdapto
 		cache.clear()
 	}
 
-	fun delete(position: Int): Int {
-		var ret = -1
-//		if ((position >= 0) && (position < shown.size)) {
-//			ret = DbContract.Notes.delete(caller.getDbHelper()!!, shown[position].pid)
-//			if (ret >= 0) {
-//				if (position < selectedPos) {
-//					selectedPos --
-//				}
-//			}
-//		}
-		return ret
-	}
-
 	/*=============
 	 * View holder
 	 */
