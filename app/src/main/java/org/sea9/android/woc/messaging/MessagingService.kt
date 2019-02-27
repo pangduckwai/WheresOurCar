@@ -75,6 +75,7 @@ class MessagingService: FirebaseMessagingService() {
 								   (settingsManager.publisherId == remoteMessage.from)) {
 							Log.w(TAG, "Subscribed: ${settingsManager.publisherId} / ${remoteMessage.from}")
 							val list = DbContract.Vehicle.select(helper, veh)
+							Log.w(TAG, "Size: ${list.size} $veh")
 							val status: Int
 							val record = when (list.size) {
 								0 -> {
@@ -87,6 +88,7 @@ class MessagingService: FirebaseMessagingService() {
 								}
 								else -> throw RuntimeException("Vehicle table corrupted") // should not happen because of unique index
 							}
+
 							// Keep the modified timestamp here because should use the modified timestamp from the publisher
 							onUpdate(MainContext.saveVehicle(status, record, helper, false))
 						} else {
@@ -95,6 +97,8 @@ class MessagingService: FirebaseMessagingService() {
 					} else {
 						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
 					}
+				} else {
+					Log.w(TAG, "Invalid message format: no data section")
 				}
 			}
 			else -> {

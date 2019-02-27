@@ -3,7 +3,6 @@ package org.sea9.android.woc.data
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.DatabaseUtils
-import android.database.SQLException
 import android.provider.BaseColumns
 import java.util.*
 
@@ -223,8 +222,10 @@ object DbContract {
 			}
 
 			fun update(helper: DbHelper, record: VehicleRecord): Int {
+				val db = helper.writableDatabase
 				val args = arrayOf(record.rid.toString())
-				val newRow = ContentValues().apply {
+				val newRow0 = ContentValues().apply { put(COL_CURR, 0) }
+				val newRow1 = ContentValues().apply {
 					put(COMMON_NAME, record.name)
 					put(COL_PARK, record.parking)
 					put(COL_FLOOR, record.floor)
@@ -232,7 +233,17 @@ object DbContract {
 					put(COL_CURR, 1)
 					put(COMMON_MODF, record.modified ?: Date().time)
 				}
-				return helper.writableDatabase.update(TABLE, newRow, COMMON_PKEY, args)
+				var ret = -1
+				db.beginTransactionNonExclusive()
+				try {
+					if (db.update(TABLE, newRow0, null, null) > 0) {
+						ret = db.update(TABLE, newRow1, COMMON_PKEY, args)
+						if (ret == 1) db.setTransactionSuccessful()
+					}
+				} finally {
+					db.endTransaction()
+				}
+				return ret
 			}
 
 			fun delete(helper: DbHelper, rid: Long): Int {
