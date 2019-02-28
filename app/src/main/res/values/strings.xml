@@ -31,7 +31,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="label_alone">Stand Alone</string>
 	<string name="label_publisher">Publisher</string>
 	<string name="label_subscriber">Subscriber</string>
-	<string name="label_subscribers">Subscribers</string>
+	<string name="label_subscribers">Current subscribers</string>
 	<string name="label_token">Device Token</string>
 	<string name="label_accept">Accept</string>
 	<string name="label_reject">Reject</string>

@@ -23,37 +23,13 @@
 			card_view:cardBackgroundColor="@color/colorCard">
 		<RadioButton
 				android:id="@+id/radio_alone"
-				android:layout_width="wrap_content"
+				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:layout_marginBottom="@dimen/margin_narrow"
 				android:layout_marginTop="@dimen/margin_narrow"
 				android:layout_gravity="start|top"
 				android:textSize="@dimen/text_title"
 				android:text="@string/label_alone"/>
-	</android.support.v7.widget.CardView>
-
-	<android.support.v7.widget.CardView
-			android:id="@+id/card_publisher"
-			android:layout_gravity="center"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:minWidth="@dimen/dialog_minWidth"
-			android:layout_marginBottom="@dimen/margin_narrow"
-			android:layout_marginEnd="@dimen/fab_margin"
-			android:layout_marginStart="@dimen/fab_margin"
-			android:layout_marginTop="@dimen/margin_narrow"
-			card_view:cardCornerRadius="@dimen/margin_narrow"
-			card_view:cardBackgroundColor="@color/colorCard">
-		<RadioButton
-				android:id="@+id/radio_publisher"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginBottom="@dimen/margin_narrow"
-				android:layout_marginTop="@dimen/margin_narrow"
-				android:layout_gravity="start|top"
-				android:textSize="@dimen/text_title"
-				android:text="@string/label_publisher"
-				android:enabled="false"/>
 	</android.support.v7.widget.CardView>
 
 	<android.support.v7.widget.CardView
@@ -129,6 +105,30 @@
 					android:selectAllOnFocus="true"
 					android:hint="@string/hint_email_s"/>
 		</LinearLayout>
+	</android.support.v7.widget.CardView>
+
+	<android.support.v7.widget.CardView
+			android:id="@+id/card_publisher"
+			android:layout_gravity="center"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:minWidth="@dimen/dialog_minWidth"
+			android:layout_marginBottom="@dimen/margin_narrow"
+			android:layout_marginEnd="@dimen/fab_margin"
+			android:layout_marginStart="@dimen/fab_margin"
+			android:layout_marginTop="@dimen/margin_narrow"
+			card_view:cardCornerRadius="@dimen/margin_narrow"
+			card_view:cardBackgroundColor="@color/colorCard">
+		<RadioButton
+				android:id="@+id/radio_publisher"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/margin_narrow"
+				android:layout_marginTop="@dimen/margin_narrow"
+				android:layout_gravity="start|top"
+				android:textSize="@dimen/text_title"
+				android:text="@string/label_publisher"
+				android:enabled="false"/>
 	</android.support.v7.widget.CardView>
 
 	<android.support.v7.widget.CardView
