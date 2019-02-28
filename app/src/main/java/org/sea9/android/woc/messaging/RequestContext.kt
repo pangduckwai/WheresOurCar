@@ -17,10 +17,13 @@ import java.lang.RuntimeException
 class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 	companion object {
 		const val TAG = "woc.request_retained"
-		private const val URL_TOKEN = "t"
-		private const val URL_SUBSCRIBER = "c"
+		private const val QUERY_PARAM_TOKEN = "t"
+		private const val QUERY_PARAM_SUBSCRIBER = "c"
+		private const val QUERY_PARAM_TOKEN_OLD = "o"
+		private const val QUERY_PARAM_TOKEN_NEW = "N"
 		private const val URL_SUBSCRIBE = "s"
 		private const val URL_UNSUBSCRIBE = "u"
+		private const val URL_REFRESH = "d"
 
 		fun getInstance(sfm: FragmentManager): RequestContext {
 			var instance = sfm.findFragmentByTag(TAG) as RequestContext?
@@ -39,19 +42,30 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 
 	private lateinit var publishingUtils: PublishingUtils
 
-	var isSubscribe = false
+	var requestMode = -1
 		private set
 	var subscriber: String? = null
 		private set
 	var token: String? = null
 		private set
+	var tokenNew: String? = null
+		private set
 	fun handleIncomingIntent(intent: Intent?) {
-		subscriber = intent?.data?.getQueryParameter(URL_SUBSCRIBER)
-		token = intent?.data?.getQueryParameter(URL_TOKEN)
-
-		isSubscribe = when(intent?.data?.lastPathSegment) {
-			URL_SUBSCRIBE -> true
-			URL_UNSUBSCRIBE -> false
+		requestMode = when(intent?.data?.lastPathSegment) {
+			URL_SUBSCRIBE -> {
+				subscriber = intent.data?.getQueryParameter(QUERY_PARAM_SUBSCRIBER)
+				token = intent.data?.getQueryParameter(QUERY_PARAM_TOKEN)
+				2
+			}
+			URL_UNSUBSCRIBE -> {
+				token = intent.data?.getQueryParameter(QUERY_PARAM_TOKEN)
+				1
+			}
+			URL_REFRESH -> {
+				token = intent.data?.getQueryParameter(QUERY_PARAM_TOKEN_OLD)
+				tokenNew = intent.data?.getQueryParameter(QUERY_PARAM_TOKEN_NEW)
+				4
+			}
 			else -> {
 				throw RuntimeException("Invalid request")
 			}
@@ -102,31 +116,30 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 	private fun process() {
 		if (!settingsManager.isPublisher()) {
 			callback?.doNotify(RequestActivity.MSG_DIALOG_IGNORE_SUBSCRIBE, getString(R.string.msg_not_a_publisher), true)
+		} else if (requestMode == 8) {
 		} else {
 			AsyncProcessTask(this).execute()
 		}
 	}
 	private class AsyncProcessTask(private val caller: RequestContext): AsyncTask<Void, Void, Int>() {
 		override fun onPreExecute() {
-			if (caller.tokenList == null) caller.populate()
+			if (caller.tokenList == null) caller.populate() //Just in case...
 		}
 		override fun doInBackground(vararg params: Void?): Int {
-			var result = 0
 			if (caller.tokenList != null) {
-				result = if (caller.isSubscribe)
-					2 //Is subscribe
-				else
-					1 //Is unsubscribe
-
-				val found = if (caller.tokenList!!.isNotEmpty())
-					caller.tokenList!!.contains(caller.token)
-				else
-					false
-
-				if ((caller.isSubscribe && !found) || (!caller.isSubscribe && found))
-					result = result or 4
+				if (caller.tokenList!!.isEmpty() || (!caller.tokenList!!.contains(caller.token))) {
+					if (caller.requestMode == 2) //Empty db or token not found, therefore should be subscribing
+						return caller.requestMode or 8
+				} else { //'else' means non-empty db and token found, therefore should be un-subscribing or refreshing
+					if (caller.requestMode == 1) {
+						return caller.requestMode or 8
+					} else if (caller.requestMode == 4) {
+						caller.subscriber = caller.tokenList!![caller.tokenList!!.indexOf(caller.token)]
+						return caller.requestMode or 8
+					}
+				}
 			}
-			return result //000 - Okay|Subscribe|Unsubscribe
+			return 0 //0000 - Okay|Refresh|Subscribe|Unsubscribe
 		}
 		override fun onPostExecute(result: Int?) {
 			caller.status = result ?: 0
@@ -159,8 +172,14 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 		callback?.doNotify(0, getString(R.string.msg_unsubscribe_failed), false)
 	}
 
-	override fun getKey(): CharArray {
-		return CharArray(0)
+	fun refreshToken() {
+		if ((token != null) && (tokenNew != null)) {
+			if (DbContract.Token.refresh(dbHelper!!, token!!, tokenNew!!))
+				callback?.doNotify(0, getString(R.string.msg_refresh_succeed), false)
+			else
+				callback?.doNotify(0, getString(R.string.msg_refresh_failed), false)
+		}
+		callback?.onRefreshed()
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -200,6 +219,7 @@ class RequestContext: Fragment(), RetainedContext, DbHelper.Caller {
 
 	interface Callback {
 		fun onProcessed(status: Int)
+		fun onRefreshed()
 		fun doNotify(ref: Int, msg: String?, stay: Boolean)
 	}
 	private var callback: Callback? = null

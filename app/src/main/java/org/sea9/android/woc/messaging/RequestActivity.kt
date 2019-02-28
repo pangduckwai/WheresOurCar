@@ -17,6 +17,7 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 		const val TAG = "woc.request"
 		private const val EMPTY = ""
 		const val MSG_DIALOG_IGNORE_SUBSCRIBE = 80001
+		const val MSG_DIALOG_REFRESH_TOKEN = 80002
 	}
 
 	private lateinit var retainedContext: RequestContext
@@ -35,7 +36,7 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 		textToken = findViewById(R.id.token)
 
 		fab.setOnClickListener {
-			val okay = ((retainedContext.status and 4) > 0)
+			val okay = ((retainedContext.status and 8) > 0)
 			when {
 				((retainedContext.status and 1) > 0) -> {
 					if (okay) {
@@ -61,7 +62,7 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 	}
 
 	override fun onProcessed(status: Int) {
-		val okay = ((status and 4) > 0)
+		val okay = ((status and 8) > 0)
 		textSubscriber.text = retainedContext.subscriber
 		textToken.text = retainedContext.token
 
@@ -84,10 +85,27 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 					fab.isEnabled = false
 				}
 			}
+			((status and 4) > 0) -> {
+				if (okay) {
+					MessageDialog.getOkayCancelDialog(MSG_DIALOG_REFRESH_TOKEN,
+						getString(R.string.msg_refresh_token,
+							retainedContext.subscriber,
+							retainedContext.token,
+							retainedContext.tokenNew), null)
+						.show(supportFragmentManager, MessageDialog.TAG)
+				} else {
+					doNotify(0, getString(R.string.msg_unsubscribe_notfound), false)
+					finish()
+				}
+			}
 			else -> {
 				throw RuntimeException("Error encountered when processing incoming requests")
 			}
 		}
+	}
+
+	override fun onRefreshed() {
+		finish()
 	}
 
 	override fun doNotify(ref: Int, msg: String?, stay: Boolean) {
@@ -107,8 +125,16 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 	}
 
 	override fun positive(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when(reference) {
+			MSG_DIALOG_REFRESH_TOKEN -> {
+				retainedContext.refreshToken()
+			}
+		}
 	}
 
 	override fun negative(dialog: DialogInterface?, which: Int, reference: Int, bundle: Bundle?) {
+		when(reference) {
+			MSG_DIALOG_REFRESH_TOKEN -> finish()
+		}
 	}
 }

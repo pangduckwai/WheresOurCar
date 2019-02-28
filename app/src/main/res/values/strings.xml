@@ -1,9 +1,9 @@
 <resources>
-	<string name="app_name">Where\'s Our Cars2</string>
+	<string name="app_name">Where\'s Our Cars</string>
 	<string name="app_version">Version %s</string>
 	<string name="app_copyright" translatable="false">\u00A9 Copyright 2019 SEA9.ORG</string>
 	<string name="app_license">
-Secret Pad is a free software, and is released under the GNU GPLv2 license.\n
+Where\'s Our Cars is a free software, and is released under the GNU GPLv2 license.\n
 This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
     </string>
@@ -67,12 +67,18 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_unsubscribe_succeed">Unsubscribed successfully</string>
 	<string name="msg_unsubscribe_failed">Unsubscribe failed</string>
 	<string name="msg_not_a_publisher">Not a publisher, ignoring subscription request</string>
+	<string name="msg_refresh_token">Subscriber %s token refreshed from %s to %s</string>
+	<string name="msg_refresh_succeed">Token refreshed successfully</string>
+	<string name="msg_refresh_failed">Refresh token failed</string>
 	<string name="msg_accept_title">Received subscription approval from</string>
 	<string name="msg_accept_time">Request made on</string>
-	<string name="sub_email_title">Where\'s Our Car subscription request (%s)</string>
+	<string name="sub_email_title0">Where\'s Our Car subscription request (%s)</string>
+	<string name="sub_email_title1">Where\'s Our Car unsubscribe request (%s)</string>
+	<string name="sub_email_title2">Where\'s Our Car device token update (%s)</string>
 	<string name="sub_email_chooser">Sending subscription request…</string>
 	<string name="sub_email_subscribe"  >http://sea9.org/woc/s?t=%s&amp;c=%s</string>
 	<string name="sub_email_unsubscribe">http://sea9.org/woc/u?t=%s</string>
+	<string name="sub_email_update_token">http://sea9.org/woc/d?o=%s&amp;n=%s</string>
 	<string name="firebase_project_id">wheres-our-car</string>
 	<string name="firebase_account_key">wheres-our-car-firebase-adminsdk-swq5c-6b91c19357.json</string>
 	<string name="firebase_scope_fcm">https://www.googleapis.com/auth/firebase.messaging</string>

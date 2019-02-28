@@ -357,6 +357,44 @@ object DbContract {
 				val args = arrayOf(token)
 				return helper.writableDatabase.delete(TABLE, SQL_WHERE, args)
 			}
+
+			fun refresh(helper: DbHelper, tokenOld: String, tokenNew: String): Boolean {
+				val db = helper.writableDatabase
+				val args = arrayOf(tokenOld)
+
+				db.beginTransactionNonExclusive()
+				try {
+					val cursor = db.query(TABLE, COLUMNS, SQL_WHERE, args, null, null, null)
+					var record: TokenRecord? = null
+					cursor.use {
+						with(it) {
+							if (moveToNext()) {
+								val token = getString(getColumnIndexOrThrow(COL_TOKEN))
+								val subscriber = getString(getColumnIndexOrThrow(COL_SUBSCRIBER))
+								val modified = getLong(getColumnIndexOrThrow(COMMON_MODF))
+								record = TokenRecord(token, subscriber, modified)
+							}
+						}
+					}
+
+					if (record != null) {
+						val newRow = ContentValues().apply {
+							put(COL_SUBSCRIBER, record!!.subscriber)
+							put(COL_TOKEN, tokenNew)
+							put(COMMON_MODF, Date().time)
+						}
+						if (db.delete(TABLE, SQL_WHERE, args) == 1) {
+							if (db.insertOrThrow(TABLE, null, newRow) >= 0) {
+								db.setTransactionSuccessful()
+								return true
+							}
+						}
+					}
+					return false
+				} finally {
+					db.endTransaction()
+				}
+			}
 		}
 	}
 }

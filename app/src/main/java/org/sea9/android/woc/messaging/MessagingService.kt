@@ -23,6 +23,23 @@ class MessagingService: FirebaseMessagingService() {
 	companion object {
 		const val TAG = "woc.fcm"
 		private const val EMPTY = ""
+
+		@Suppress("DEPRECATION")
+		@SuppressLint("PackageManagerGetSignatures")
+		fun getKey(context: Context?): CharArray {
+			var buffer = CharArray(0)
+			context?.let {
+				val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+					it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
+				} else {
+					it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
+				}
+				signatures.forEach {s ->
+					buffer += s.toChars()
+				}
+			}
+			return buffer
+		}
 	}
 
 	/**
@@ -43,26 +60,6 @@ class MessagingService: FirebaseMessagingService() {
 		}
 	}
 
-	/*=============
-	 * Key related
-	 */
-	@Suppress("DEPRECATION")
-	@SuppressLint("PackageManagerGetSignatures")
-	fun getKey(): CharArray {
-		var buffer = CharArray(0)
-		this.let {
-			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
-			} else {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
-			}
-			signatures.forEach {s ->
-				buffer += s.toChars()
-			}
-		}
-		return buffer
-	}
-
 	override fun onMessageReceived(remoteMessage: RemoteMessage?) {
 		val settingsManager = SettingsManager(this)
 
@@ -76,9 +73,11 @@ class MessagingService: FirebaseMessagingService() {
 				if (remoteMessage?.data?.isNotEmpty() == true) {
 					val slt = remoteMessage.data[PublishingUtils.JSON_SALT]
 					val srt = remoteMessage.data[PublishingUtils.JSON_SECRET]
+					Log.d(TAG, "Received $srt")
+
 					if ((slt == null) || (srt == null)) return
 					val salt = KryptoUtils.decode(KryptoUtils.convert(slt.toCharArray())!!)
-					val secret = KryptoUtils.decrypt(srt.toCharArray(), getKey(), salt)
+					val secret = KryptoUtils.decrypt(srt.toCharArray(), getKey(this), salt)
 
 					val json = JSONObject(secret?.joinToString(EMPTY))
 					val veh = json.optString(VehicleRecord.NAM)
@@ -101,14 +100,13 @@ class MessagingService: FirebaseMessagingService() {
 					// in those cases. Therefore check for null for all the 4 fields.
 					if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
 						if ((settingsManager.subscriptionStatus == 1) && settingsManager.publisherId.isNullOrEmpty()) {
-							Log.w(TAG, "Pending approval: ${remoteMessage.from}")
+							Log.d(TAG, "Pending approval: ${remoteMessage.from}")
 							settingsManager.receiveApproval(remoteMessage.from)
 							DbContract.Vehicle.insertTemp(helper, VehicleRecord(-1, veh, prk, flr, lot, false, mod?.toLongOrNull()))
 						} else if ((settingsManager.subscriptionStatus == 2) &&
 								   (settingsManager.publisherId == remoteMessage.from)) {
-							Log.w(TAG, "Subscribed: ${settingsManager.publisherId} / ${remoteMessage.from}")
+							Log.d(TAG, "Subscribed: ${settingsManager.publisherId} / ${remoteMessage.from}")
 							val list = DbContract.Vehicle.select(helper, veh)
-							Log.w(TAG, "Size: ${list.size} $veh")
 							val status: Int
 							val record = when (list.size) {
 								0 -> {
@@ -125,7 +123,7 @@ class MessagingService: FirebaseMessagingService() {
 							// Keep the modified timestamp here because should use the modified timestamp from the publisher
 							onUpdate(MainContext.saveVehicle(status, record, helper, false))
 						} else {
-							Log.w(TAG, "Ignoring messages: ${settingsManager.publisherId} / ${remoteMessage.from}")
+							Log.d(TAG, "Ignoring messages: ${settingsManager.publisherId} / ${remoteMessage.from}")
 						}
 					} else {
 						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")
@@ -135,7 +133,7 @@ class MessagingService: FirebaseMessagingService() {
 				}
 			}
 			else -> {
-				Log.w(TAG, "Ignoring messages from ${remoteMessage?.from}")
+				Log.d(TAG, "Ignoring messages from ${remoteMessage?.from}")
 			}
 		}
 	}

@@ -2,10 +2,8 @@ package org.sea9.android.woc
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.database.SQLException
 import android.os.AsyncTask
-import android.os.Build
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
@@ -13,7 +11,6 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
-import org.sea9.android.crypto.KryptoUtils
 import org.sea9.android.woc.data.DbContract
 import org.sea9.android.woc.data.DbHelper
 import org.sea9.android.woc.data.TokenAdaptor
@@ -304,26 +301,6 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 				}
 			}
 		}
-	}
-
-	/*=============
-	 * Key related
-	 */
-	@Suppress("DEPRECATION")
-	@SuppressLint("PackageManagerGetSignatures")
-	override fun getKey(): CharArray {
-		var buffer = CharArray(0)
-		context?.let {
-			val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.apkContentsSigners
-			} else {
-				it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_SIGNATURES).signatures
-			}
-			signatures.forEach {s ->
-				buffer += s.toChars()
-			}
-		}
-		return buffer
 	}
 
 	/*=========================

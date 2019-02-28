@@ -59,20 +59,26 @@ class SettingsManager(private val context: Context?) {
 			}
 		}
 
-		private fun sendMail(context: Context?, isSubscribe: Boolean, publisher: String, subscriber: String, token: String) {
+		private fun sendMail(context: Context?, type: Int, publisher: String, value1: String, value2: String) {
 			val formatter = SimpleDateFormat(MainContext.PATTERN_DATE, Locale.getDefault())
 			val intent = Intent(Intent.ACTION_SENDTO)
 			intent.type = CONTENT_TYPE
 			intent.data = Uri.parse(MAIL_TO)
 			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(publisher))
-			intent.putExtra(android.content.Intent.EXTRA_SUBJECT
-				, context?.getString(R.string.sub_email_title, formatter.format(Date())))
+			intent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+				when (type) {
+					0 -> context?.getString(R.string.sub_email_title0, formatter.format(Date()))
+					1 -> context?.getString(R.string.sub_email_title1, formatter.format(Date()))
+					2 -> context?.getString(R.string.sub_email_title2, formatter.format(Date()))
+					else -> EMPTY
+				})
 			intent.putExtra(android.content.Intent.EXTRA_TEXT,
-				if (isSubscribe)
-					context?.getString(R.string.sub_email_subscribe, token, subscriber)
-				else
-					context?.getString(R.string.sub_email_unsubscribe, token)
-			)
+				when (type) {
+					0 -> context?.getString(R.string.sub_email_subscribe, value2, value1) //value2=token, value1=subscriber
+					1 -> context?.getString(R.string.sub_email_unsubscribe, value2) //value2=token
+					2 -> context?.getString(R.string.sub_email_update_token, value1, value2) //value1=old token, value2=new token
+					else -> EMPTY
+				})
 			context?.startActivity(Intent.createChooser(intent, context.getString(R.string.sub_email_chooser)))
 		}
 	}
@@ -219,7 +225,7 @@ class SettingsManager(private val context: Context?) {
 				updateSubscription(1, EMPTY, publisher, subscriber) // name == null means ignore in updateSubcription()
 				sendMail(
 					context,
-					true,
+					0,
 					publisher,
 					subscriber,
 					deviceToken!!
@@ -232,7 +238,7 @@ class SettingsManager(private val context: Context?) {
 				updateSubscription(0, EMPTY, null, null)
 				sendMail(
 					context,
-					false,
+					1,
 					publisher,
 					subscriber,
 					deviceToken!!
@@ -266,9 +272,17 @@ class SettingsManager(private val context: Context?) {
 	}
 
 	fun notifyPublisher(token: String) {
-		// TODO NOTE: make sure it is in subscription mode and subscriptionStatus is 'subscriber accepted' before proceeding
-		// to send update to publisher
-		Log.w(TAG, "Notifying publisher of the FCM token changed from $deviceToken to $token")
+		// NOTE: make sure it is in subscription mode and subscriptionStatus is 'subscriber accepted' before proceeding to send update to publisher
+		Log.d(TAG, "Notifying publisher of the FCM token changed from $deviceToken to $token")
+		if ((operationMode == MODE.SUBSCRIBER) && (subscriptionStatus == 2) && deviceToken.isNullOrEmpty() && (deviceToken != token)) {
+			sendMail(
+				context,
+				2,
+				publisherEmail!!,
+				deviceToken!!,
+				token
+			)
+		}
 	}
 
 	enum class MODE {

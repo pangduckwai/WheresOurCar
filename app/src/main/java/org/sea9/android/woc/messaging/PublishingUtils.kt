@@ -80,7 +80,7 @@ class PublishingUtils(
 			else {
 				Log.d(TAG, "Publishing response $result")
 				val match = pattern.find(result)
-				if (match?.groupValues?.get(1) == projectId) Log.w(TAG, "Publishing response $result")
+				//if (match?.groupValues?.get(1) == projectId) Log.w(TAG, "Publishing response $result")
 				match?.groupValues?.get(1) == projectId
 			}
 		}
@@ -107,7 +107,7 @@ class PublishingUtils(
 		val tokens = DbContract.Token.select(retainedContext.getDbHelper()!!)
 		tokens.forEach { token ->
 			val salt = KryptoUtils.generateSalt() //Use a different salt for each subscriber
-			val secret = KryptoUtils.encrypt(data.toString().toCharArray(), retainedContext.getKey(), salt)
+			val secret = KryptoUtils.encrypt(data.toString().toCharArray(), MessagingService.getKey(retainedContext.getContext()), salt)
 			val payload = JSONObject()
 			payload.put(JSON_SALT, KryptoUtils.convert(KryptoUtils.encode(salt))?.joinToString(EMPTY))
 			payload.put(JSON_SECRET, secret?.joinToString(EMPTY))
@@ -115,7 +115,7 @@ class PublishingUtils(
 			body.put(JSON_TOKEN, token.token)
 			body.put(JSON_DATA, payload)
 			JSONObject().put(JSON_MESSAGE, body).also {
-				Log.w(TAG, "Publishing message $it...")
+				Log.d(TAG, "Publishing message $it...")
 			}.also {
 				// Need to start the thread here, otherwise won't run after the app shutdown
 				AsyncDispatchTask(this, projectId, String.format(fbEndpoint, projectId), fbPattern).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, it)
@@ -184,7 +184,7 @@ class PublishingUtils(
 			val rand = Random()
 			while (!httpRequest(url, caller.accessToken, params[0]!!, projectId, pattern) && (count < RETRY) && (backoff < (MAX_BACKOFF_DELAY/2))) {
 				val sleep = (backoff / 2 + rand.nextInt(backoff)).toLong()
-				Log.w(TAG, "Retry #$count in ${sleep}ms: failed publishing ${params[0]}")
+				Log.d(TAG, "Retry #$count in ${sleep}ms: failed publishing ${params[0]}")
 				count ++
 				backoff *= 2
 				try {

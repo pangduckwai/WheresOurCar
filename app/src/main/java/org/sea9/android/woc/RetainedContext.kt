@@ -10,6 +10,4 @@ interface RetainedContext {
 	fun getSettingsManager(): SettingsManager
 
 	fun getDbHelper(): DbHelper?
-
-	fun getKey(): CharArray
 }
