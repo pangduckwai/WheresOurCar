@@ -70,18 +70,18 @@ class PublishingUtils(
 				}
 			} catch (e: Exception) {
 				Log.w(TAG, e)
-				null
+				throw e
 			} finally {
 				connection?.disconnect()
 			}
 
-			return if (result == null)
+			val match = pattern.find(result)
+			return if (match?.groupValues?.get(1) == projectId) {
+				Log.d(TAG, "Publishing succeed with response $result")
+				true
+			} else {
+				Log.w(TAG, "Publishing failed with response $result")
 				false
-			else {
-				Log.d(TAG, "Publishing response $result")
-				val match = pattern.find(result)
-				//if (match?.groupValues?.get(1) == projectId) Log.w(TAG, "Publishing response $result")
-				match?.groupValues?.get(1) == projectId
 			}
 		}
 	}

@@ -95,16 +95,18 @@ class MessagingService: FirebaseMessagingService() {
 						}
 					})
 
-					// Expecting the FCM must contain all 4 of the above fields, even in the cases when the
-					// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
-					// in those cases. Therefore check for null for all the 4 fields.
 					if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
+						// The FCM message must contain all 4 of the above fields, even in the cases when the
+						// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
+						// in those cases. Therefore check for null for all the 4 fields.
 						if ((settingsManager.subscriptionStatus == 1) && settingsManager.publisherId.isNullOrEmpty()) {
 							Log.d(TAG, "Pending approval: ${remoteMessage.from}")
 							settingsManager.receiveApproval(remoteMessage.from)
-							DbContract.Vehicle.insertTemp(helper, VehicleRecord(-1, veh, prk, flr, lot, false, mod?.toLongOrNull()))
-						} else if ((settingsManager.subscriptionStatus == 2) &&
-								   (settingsManager.publisherId == remoteMessage.from)) {
+							DbContract.Vehicle.insertTemp(
+								helper,
+								VehicleRecord(-1, veh, prk, flr, lot, false, mod?.toLongOrNull())
+							)
+						} else if ((settingsManager.subscriptionStatus == 2) && (settingsManager.publisherId == remoteMessage.from)) {
 							Log.d(TAG, "Subscribed: ${settingsManager.publisherId} / ${remoteMessage.from}")
 							val list = DbContract.Vehicle.select(helper, veh)
 							val status: Int
@@ -124,6 +126,12 @@ class MessagingService: FirebaseMessagingService() {
 							onUpdate(MainContext.saveVehicle(status, record, helper, false))
 						} else {
 							Log.d(TAG, "Ignoring messages: ${settingsManager.publisherId} / ${remoteMessage.from}")
+						}
+					} else if ((veh == null) && (prk == null) && (flr == null) && (lot == null)) {
+						// Otherwise if none of the 4 field present means the publisher removed this subscriber from his/her subscriber list,
+						// therefore reset the subscriber status
+						if (settingsManager.publisherId == remoteMessage.from) {
+							settingsManager.receiveCancellation()
 						}
 					} else {
 						Log.w(TAG, "Invalid message format: ${remoteMessage.data}")

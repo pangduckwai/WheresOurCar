@@ -255,6 +255,11 @@ class SettingsManager(private val context: Context?) {
 			updateSubscription(1, id, null, null)
 		}
 	}
+	fun receiveCancellation() {
+		if (publisherId.isNullOrEmpty()) {
+			updateSubscription(0, EMPTY, null, null)
+		}
+	}
 
 	/**
 	 * This is called after the subscriber accepted the received publication, after the publisher received the subscrption
