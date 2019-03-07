@@ -268,6 +268,7 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		DbContract.Token.delete(dbHelper!!, token)
 		tokenAdaptor.populateCache()
 		tokenAdaptor.notifyDataSetChanged()
+		publishingUtils.publish(token)
 	}
 
 	fun subscribes(publisher: String, subscriber: String) {

@@ -88,6 +88,9 @@ class PublishingUtils(
 
 	private var accessToken: String? = null
 
+	/**
+	 * Publish the vehicle record via FCM to all subscribers.
+	 */
 	fun publish(record: VehicleRecord?) {
 		if (record == null) return
 		if (!retainedContext.getSettingsManager().isPublisher()) return
@@ -106,22 +109,41 @@ class PublishingUtils(
 
 		val tokens = DbContract.Token.select(retainedContext.getDbHelper()!!)
 		tokens.forEach { token ->
-			val salt = KryptoUtils.generateSalt() //Use a different salt for each subscriber
-			val secret = KryptoUtils.encrypt(data.toString().toCharArray(), MessagingService.getKey(retainedContext.getContext()), salt)
-			val payload = JSONObject()
-			payload.put(JSON_SALT, KryptoUtils.convert(KryptoUtils.encode(salt))?.joinToString(EMPTY))
-			payload.put(JSON_SECRET, secret?.joinToString(EMPTY))
-			val body = JSONObject()
-			body.put(JSON_TOKEN, token.token)
-			body.put(JSON_DATA, payload)
-			JSONObject().put(JSON_MESSAGE, body).also {
-				Log.d(TAG, "Publishing message $it...")
-			}.also {
-				// Need to start the thread here, otherwise won't run after the app shutdown
-				AsyncDispatchTask(this, projectId, String.format(fbEndpoint, projectId), fbPattern).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, it)
-			}
+			// This function will start the dispatch task. It is needed to start so early because the
+			// app attempts to publish changes when the user exit the app. All async tasks need to be
+			// started before finish() is called, otherwise they won't be started (as the UI thread
+			// already exit when finish() is called).
+			publish(token.token, data)
 		}
 		AsyncOAuthTask(this, keyFile, scopeUrl).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+	}
+
+	/**
+	 * Publish an empty record to a specific subscriber. Actually this is called when the publisher remove
+	 * the subscriber with the given token, letting the subscriber to update its own subscription status.
+	 */
+	fun publish(token: String) {
+		val data = JSONObject()
+		data.put(MSG_NOW, Date().time.toString())
+		publish(token, data)
+		AsyncOAuthTask(this, keyFile, scopeUrl).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+	}
+
+	private fun publish(token: String, data: JSONObject) {
+		val salt = KryptoUtils.generateSalt() //Use a different salt for each subscriber
+		val secret = KryptoUtils.encrypt(data.toString().toCharArray(), MessagingService.getKey(retainedContext.getContext()), salt)
+		val payload = JSONObject()
+		payload.put(JSON_SALT, KryptoUtils.convert(KryptoUtils.encode(salt))?.joinToString(EMPTY))
+		payload.put(JSON_SECRET, secret?.joinToString(EMPTY))
+		val body = JSONObject()
+		body.put(JSON_TOKEN, token)
+		body.put(JSON_DATA, payload)
+		JSONObject().put(JSON_MESSAGE, body).also {
+			Log.d(TAG, "Publishing message $it...")
+		}.also {
+			AsyncDispatchTask(this, projectId, String.format(fbEndpoint, projectId), fbPattern)
+				.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, it)
+		}
 	}
 
 	private class AsyncOAuthTask(
