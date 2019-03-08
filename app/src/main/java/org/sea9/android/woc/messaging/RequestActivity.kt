@@ -99,7 +99,8 @@ class RequestActivity : AppCompatActivity(), RequestContext.Callback, MessageDia
 				}
 			}
 			else -> {
-				throw RuntimeException("Error encountered when processing incoming requests")
+				doNotify(0, getString(R.string.msg_subscribe_error), true)
+				finish()
 			}
 		}
 	}

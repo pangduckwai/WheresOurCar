@@ -62,6 +62,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 	<string name="msg_subscribe_fail">Subscription already exists</string>
 	<string name="msg_subscribe_succeed">Subscription approved</string>
 	<string name="msg_subscribe_failed">Approve subscription failed</string>
+	<string name="msg_subscribe_error">Error encountered when processing subscription requests, please remove the token and try again</string>
 	<string name="msg_unsubscribe_pending">Unsubscribe request from</string>
 	<string name="msg_unsubscribe_notfound">Subscription not found</string>
 	<string name="msg_unsubscribe_succeed">Unsubscribed successfully</string>

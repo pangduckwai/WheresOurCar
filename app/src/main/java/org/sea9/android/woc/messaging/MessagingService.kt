@@ -80,10 +80,10 @@ class MessagingService: FirebaseMessagingService() {
 					val secret = KryptoUtils.decrypt(srt.toCharArray(), getKey(this), salt)
 
 					val json = JSONObject(secret?.joinToString(EMPTY))
-					val veh = json.optString(VehicleRecord.NAM)
-					val prk = json.optString(VehicleRecord.PRK)
-					val flr = json.optString(VehicleRecord.FLR)
-					val lot = json.optString(VehicleRecord.LOT)
+					val veh = json.optString(VehicleRecord.NAM) ?: EMPTY
+					val prk = json.optString(VehicleRecord.PRK) ?: EMPTY
+					val flr = json.optString(VehicleRecord.FLR) ?: EMPTY
+					val lot = json.optString(VehicleRecord.LOT) ?: EMPTY
 					val mod = json.optString(VehicleRecord.MOD)
 
 					val helper = DbHelper(object : DbHelper.Caller {
@@ -95,7 +95,7 @@ class MessagingService: FirebaseMessagingService() {
 						}
 					})
 
-					if ((veh != null) && (prk != null) && (flr != null) && (lot != null)) {
+					if (veh.isNotBlank() && prk.isNotBlank() && flr.isNotBlank() && lot.isNotBlank()) {
 						// The FCM message must contain all 4 of the above fields, even in the cases when the
 						// publisher didn't specify the Floor or Lot. These 2 fields will be sent as empty string
 						// in those cases. Therefore check for null for all the 4 fields.
@@ -127,7 +127,7 @@ class MessagingService: FirebaseMessagingService() {
 						} else {
 							Log.d(TAG, "Ignoring messages: ${settingsManager.publisherId} / ${remoteMessage.from}")
 						}
-					} else if ((veh == null) && (prk == null) && (flr == null) && (lot == null)) {
+					} else if (veh.isBlank() && prk.isBlank() && flr.isBlank() && lot.isBlank()) {
 						// Otherwise if none of the 4 field present means the publisher removed this subscriber from his/her subscriber list,
 						// therefore reset the subscriber status
 						if (settingsManager.publisherId == remoteMessage.from) {
