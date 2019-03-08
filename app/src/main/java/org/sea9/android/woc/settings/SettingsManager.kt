@@ -256,7 +256,7 @@ class SettingsManager(private val context: Context?) {
 		}
 	}
 	fun receiveCancellation() {
-		if (publisherId.isNullOrEmpty()) {
+		if (!publisherId.isNullOrEmpty()) {
 			updateSubscription(0, EMPTY, null, null)
 		}
 	}
