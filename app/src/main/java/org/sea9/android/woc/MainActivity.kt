@@ -404,6 +404,10 @@ class MainActivity : AppCompatActivity(), Observer, MainContext.Callback
 		dialogShowing = true
 	}
 
+	override fun canBePublisher(): Boolean {
+		return retainedContext.publishingUtils.canBePublisher
+	}
+
 	/*==============================================================
 	 * @see org.sea9.android.woc.messaging.SubscribeDialog.Callback
 	 */

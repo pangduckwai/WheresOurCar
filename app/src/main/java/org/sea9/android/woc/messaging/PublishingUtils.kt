@@ -86,6 +86,19 @@ class PublishingUtils(
 		}
 	}
 
+	val canBePublisher: Boolean
+	init {
+		canBePublisher = try {
+			retainedContext.getContext()?.let {
+				it.assets?.open(keyFile)
+				true
+			} ?: false
+		} catch (e: Exception) {
+			Log.d(TAG, "Key file not found", e)
+			false
+		}
+	}
+
 	private var accessToken: String? = null
 
 	/**

@@ -57,6 +57,7 @@ class SettingsDialog : DialogFragment() {
 				callback?.getAdaptor()?.notifyDataSetChanged()
 			}
 		}
+		radioPublisher.isEnabled = callback?.canBePublisher() ?: false
 
 		radioSubscriber = layout.findViewById(R.id.radio_subscriber)
 		radioSubscriber.setOnCheckedChangeListener { _, isChecked ->
@@ -219,6 +220,7 @@ class SettingsDialog : DialogFragment() {
 		fun getSettingsManager(): SettingsManager
 		fun doNotify(msg: String?)
 		fun onConfirmRemoveSubscriber(record: TokenRecord)
+		fun canBePublisher(): Boolean
 	}
 	private var callback: Callback? = null
 

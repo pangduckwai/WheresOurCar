@@ -83,7 +83,8 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 		return settingsManager
 	}
 
-	private lateinit var publishingUtils: PublishingUtils
+	lateinit var publishingUtils: PublishingUtils
+		private set
 
 	fun publish() {
 		publishingUtils.publish(currentVehicle)

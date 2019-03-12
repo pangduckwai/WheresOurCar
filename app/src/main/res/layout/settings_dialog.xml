@@ -127,8 +127,7 @@
 				android:layout_marginTop="@dimen/margin_narrow"
 				android:layout_gravity="start|top"
 				android:textSize="@dimen/text_title"
-				android:text="@string/label_publisher"
-				android:enabled="false"/>
+				android:text="@string/label_publisher"/>
 	</android.support.v7.widget.CardView>
 
 	<android.support.v7.widget.CardView
@@ -155,8 +154,7 @@
 					android:layout_marginTop="@dimen/margin_narrow"
 					android:layout_gravity="start|top"
 					android:text="@string/label_subscribers"
-					android:textSize="@dimen/text_normal"
-					android:textColor="@android:color/black"/>
+					android:textSize="@dimen/text_normal"/>
 			<android.support.v7.widget.RecyclerView
 					android:id="@+id/subscribers"
 					android:layout_width="match_parent"
