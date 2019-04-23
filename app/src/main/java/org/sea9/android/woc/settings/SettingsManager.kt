@@ -64,15 +64,15 @@ class SettingsManager(private val context: Context?) {
 			val intent = Intent(Intent.ACTION_SENDTO)
 			intent.type = CONTENT_TYPE
 			intent.data = Uri.parse(MAIL_TO)
-			intent.putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(publisher))
-			intent.putExtra(android.content.Intent.EXTRA_SUBJECT,
+			intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(publisher))
+			intent.putExtra(Intent.EXTRA_SUBJECT,
 				when (type) {
 					0 -> context?.getString(R.string.sub_email_title0, formatter.format(Date()))
 					1 -> context?.getString(R.string.sub_email_title1, formatter.format(Date()))
 					2 -> context?.getString(R.string.sub_email_title2, formatter.format(Date()))
 					else -> EMPTY
 				})
-			intent.putExtra(android.content.Intent.EXTRA_TEXT,
+			intent.putExtra(Intent.EXTRA_TEXT,
 				when (type) {
 					0 -> context?.getString(R.string.sub_email_subscribe, value2, value1) //value2=token, value1=subscriber
 					1 -> context?.getString(R.string.sub_email_unsubscribe, value2) //value2=token

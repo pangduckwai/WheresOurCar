@@ -168,7 +168,7 @@ class MainContext: Fragment(), RetainedContext, DbHelper.Caller, TokenAdaptor.Ca
 	fun saveVehicle(): Boolean {
 		if (dbHelper != null) {
 			// Ignore timestamp here because any changes made from the UI should have the modified timestamp updated
-			val result = MainContext.saveVehicle(status, currentVehicle, dbHelper!!, true)
+			val result = saveVehicle(status, currentVehicle, dbHelper!!, true)
 			when {
 				(result == 0) -> {
 					//callback?.doNotify(activity?.getString(R.string.msg_ui_no_change))
